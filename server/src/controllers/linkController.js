@@ -15,5 +15,13 @@ export function createLinkController({ linkService }) {
           data: link,
         })
     },
+
+    redirect(request, response) {
+      const link = linkService.getLinkByCode(
+        request.params.shortCode,
+      )
+
+      return response.redirect(302, link.originalUrl)
+    },
   }
 }

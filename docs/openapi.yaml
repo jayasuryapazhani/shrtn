@@ -2,13 +2,14 @@ openapi: 3.0.3
 
 info:
   title: Shrtn API
-  version: 0.2.0
+  version: 0.3.0
   description: |
     REST API for the Shrtn URL-shortening Chrome extension.
 
-    The current version can create short-link records using temporary
-    in-memory storage. Redirect handling and PostgreSQL persistence
-    will be implemented in later releases.
+    The current version can create short links and redirect valid
+    short codes to their original destinations. Storage remains
+    temporary and in memory. PostgreSQL persistence will be added
+    in a later release.
 
 servers:
   - url: http://localhost:5056
@@ -38,7 +39,7 @@ paths:
               example:
                 status: UP
                 service: shrtn-api
-                version: 0.2.0
+                version: 0.3.0
                 timestamp: "2026-07-13T02:25:00.000Z"
 
   /api/v1/links:
@@ -155,7 +156,73 @@ paths:
                 error:
                   code: INTERNAL_SERVER_ERROR
                   message: An unexpected server error occurred.
+  /{shortCode}:
+    get:
+      tags:
+        - Links
+      summary: Redirect a short link
+      description: |
+        Finds a stored link using its seven-character short code
+        and redirects the client to the original URL.
 
+        The current implementation uses temporary in-memory storage.
+        Links are lost when the API process restarts.
+      operationId: redirectShortLink
+
+      parameters:
+        - name: shortCode
+          in: path
+          required: true
+          description: Seven-character alphanumeric Shrtn code
+          schema:
+            type: string
+            minLength: 7
+            maxLength: 7
+            pattern: "^[A-Za-z0-9]{7}$"
+          example: AbC123x
+
+      responses:
+        "302":
+          description: Redirect to the original URL
+          headers:
+            Location:
+              description: Original URL associated with the short code
+              schema:
+                type: string
+                format: uri
+              example: https://example.com/products?id=123
+
+        "404":
+          description: The short link does not exist or the route format is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                linkNotFound:
+                  summary: Valid short-code format with no stored record
+                  value:
+                    error:
+                      code: LINK_NOT_FOUND
+                      message: The requested short link does not exist.
+
+                invalidCodeFormat:
+                  summary: Invalid Shrtn short-code format
+                  value:
+                    error:
+                      code: ROUTE_NOT_FOUND
+                      message: Route GET /not-valid does not exist.
+
+        "500":
+          description: Unexpected server failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: INTERNAL_SERVER_ERROR
+                  message: An unexpected server error occurred.
 components:
   schemas:
     HealthResponse:
@@ -181,7 +248,7 @@ components:
 
         version:
           type: string
-          example: 0.2.0
+          example: 0.3.0
 
         timestamp:
           type: string

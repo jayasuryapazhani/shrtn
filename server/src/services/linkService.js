@@ -36,5 +36,19 @@ export function createLinkService({
         message: 'A unique short code could not be generated.',
       })
     },
+
+    getLinkByCode(shortCode) {
+      const link = linkRepository.findByCode(shortCode)
+
+      if (!link) {
+        throw new AppError({
+          statusCode: 404,
+          code: 'LINK_NOT_FOUND',
+          message: 'The requested short link does not exist.',
+        })
+      }
+
+      return link
+    },
   }
 }
