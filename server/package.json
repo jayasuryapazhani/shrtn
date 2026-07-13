@@ -1,0 +1,30 @@
+{
+  "name": "shrtn-api",
+  "version": "0.1.0",
+  "description": "Backend REST API for the Shrtn URL shortener",
+  "main": "src/server.js",
+  "scripts": {
+    "test": "vitest run",
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test:watch": "vitest",
+    "lint": "oxlint src tests",
+    "check": "npm run lint && npm test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "private": true,
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "oxlint": "^1.73.0",
+    "supertest": "^7.2.2",
+    "vitest": "^4.1.10"
+  }
+}
