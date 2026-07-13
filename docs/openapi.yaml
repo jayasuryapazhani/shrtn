@@ -1,0 +1,287 @@
+openapi: 3.0.3
+
+info:
+  title: Shrtn API
+  version: 0.2.0
+  description: |
+    REST API for the Shrtn URL-shortening Chrome extension.
+
+    The current version can create short-link records using temporary
+    in-memory storage. Redirect handling and PostgreSQL persistence
+    will be implemented in later releases.
+
+servers:
+  - url: http://localhost:5056
+    description: Local development server
+
+tags:
+  - name: Health
+    description: Service availability endpoints
+
+  - name: Links
+    description: Short-link creation and management endpoints
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Get API health
+      operationId: getHealth
+      responses:
+        "200":
+          description: The Shrtn API is running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              example:
+                status: UP
+                service: shrtn-api
+                version: 0.2.0
+                timestamp: "2026-07-13T02:25:00.000Z"
+
+  /api/v1/links:
+    post:
+      tags:
+        - Links
+      summary: Create a shortened URL
+      description: |
+        Validates an HTTP or HTTPS URL, generates a unique
+        seven-character short code, and stores the record temporarily
+        in memory.
+      operationId: createShortLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLinkRequest"
+            examples:
+              standardUrl:
+                summary: Standard HTTPS URL
+                value:
+                  originalUrl: https://example.com/products?id=123
+
+              localDevelopmentUrl:
+                summary: Local development URL
+                value:
+                  originalUrl: http://localhost:5173
+
+      responses:
+        "201":
+          description: Short link created successfully
+          headers:
+            Location:
+              description: Complete shortened URL
+              schema:
+                type: string
+                format: uri
+              example: http://localhost:5056/AbC123x
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LinkResponse"
+              example:
+                data:
+                  originalUrl: https://example.com/products?id=123
+                  shortCode: AbC123x
+                  shortUrl: http://localhost:5056/AbC123x
+                  createdAt: "2026-07-13T02:25:00.000Z"
+
+        "400":
+          description: Request validation or JSON parsing failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidUrl:
+                  summary: Invalid URL
+                  value:
+                    error:
+                      code: VALIDATION_ERROR
+                      message: Request validation failed.
+                      details:
+                        - field: originalUrl
+                          message: originalUrl must be a valid URL.
+
+                unsupportedProtocol:
+                  summary: Unsupported URL protocol
+                  value:
+                    error:
+                      code: VALIDATION_ERROR
+                      message: Request validation failed.
+                      details:
+                        - field: originalUrl
+                          message: Only HTTP and HTTPS URLs are supported.
+
+                invalidJson:
+                  summary: Malformed JSON
+                  value:
+                    error:
+                      code: INVALID_JSON
+                      message: The request body contains invalid JSON.
+
+        "409":
+          description: A unique short code could not be generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: SHORT_CODE_CONFLICT
+                  message: A unique short code could not be generated.
+
+        "413":
+          description: Request body exceeds the 10 KB limit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+
+        "500":
+          description: Unexpected server failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: INTERNAL_SERVER_ERROR
+                  message: An unexpected server error occurred.
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - service
+        - version
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum:
+            - UP
+          example: UP
+
+        service:
+          type: string
+          enum:
+            - shrtn-api
+          example: shrtn-api
+
+        version:
+          type: string
+          example: 0.2.0
+
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-07-13T02:25:00.000Z"
+
+    CreateLinkRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - originalUrl
+      properties:
+        originalUrl:
+          type: string
+          format: uri
+          minLength: 1
+          maxLength: 4096
+          description: An HTTP or HTTPS URL to shorten
+          example: https://example.com/products?id=123
+
+    Link:
+      type: object
+      additionalProperties: false
+      required:
+        - originalUrl
+        - shortCode
+        - shortUrl
+        - createdAt
+      properties:
+        originalUrl:
+          type: string
+          format: uri
+          example: https://example.com/products?id=123
+
+        shortCode:
+          type: string
+          minLength: 7
+          maxLength: 7
+          pattern: "^[A-Za-z0-9]{7}$"
+          example: AbC123x
+
+        shortUrl:
+          type: string
+          format: uri
+          example: http://localhost:5056/AbC123x
+
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-07-13T02:25:00.000Z"
+
+    LinkResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/Link"
+
+    ErrorDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - field
+        - message
+      properties:
+        field:
+          type: string
+          example: originalUrl
+
+        message:
+          type: string
+          example: originalUrl must be a valid URL.
+
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+
+        message:
+          type: string
+          example: Request validation failed.
+
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorDetail"
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+      properties:
+        error:
+          $ref: "#/components/schemas/Error"
