@@ -1,44 +1,22 @@
 {
   "info": {
-    "_postman_id": "2faed6f5-b15c-49f8-9771-eac99229f001",
+    "_postman_id": "d8aea77a-a76c-405b-ac4d-891cea134cfe",
     "name": "Shrtn API",
     "description": "Postman collection for validating the Shrtn URL-shortening API. The current release uses temporary in-memory storage and does not yet implement redirect handling.",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "48883761",
+    "_collection_link": "https://go.postman.co/collection/48883761-d8aea77a-a76c-405b-ac4d-891cea134cfe?source=collection_link"
   },
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:5056",
-      "type": "string"
-    },
-    {
-      "key": "shortCode",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "shortUrl",
-      "value": "",
-      "type": "string"
-    }
-  ],
   "item": [
     {
       "name": "Health",
       "item": [
         {
           "name": "Get API Health",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/health",
-            "description": "Confirms that the Shrtn API is running."
-          },
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "const responseBody = pm.response.json()",
                   "",
@@ -54,17 +32,34 @@
                   "  pm.expect(responseBody).to.include({",
                   "    status: 'UP',",
                   "    service: 'shrtn-api',",
-                  "    version: '0.2.0'",
+                  "    version: '0.3.0'",
                   "  })",
                   "})",
                   "",
                   "pm.test('Timestamp is a valid ISO date', function () {",
                   "  pm.expect(Number.isNaN(Date.parse(responseBody.timestamp))).to.eql(false)",
                   "})"
-                ]
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Confirms that the Shrtn API is running."
+          },
           "response": []
         }
       ]
@@ -74,27 +69,6 @@
       "item": [
         {
           "name": "Create Valid Short Link",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"originalUrl\": \"https://example.com/products?id=123\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": "{{baseUrl}}/api/v1/links",
-            "description": "Creates a short-link record for a valid HTTPS URL."
-          },
           "event": [
             {
               "listen": "test",
@@ -138,10 +112,6 @@
               }
             }
           ],
-          "response": []
-        },
-        {
-          "name": "Reject Missing Original URL",
           "request": {
             "method": "POST",
             "header": [
@@ -153,16 +123,30 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{}",
+              "raw": "{\n  \"originalUrl\": \"https://example.com/products?id=123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": "{{baseUrl}}/api/v1/links",
-            "description": "Verifies that originalUrl is required."
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/links",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "links"
+              ]
+            },
+            "description": "Creates a short-link record for a valid HTTPS URL."
           },
+          "response": []
+        },
+        {
+          "name": "Reject Missing Original URL",
           "event": [
             {
               "listen": "test",
@@ -190,10 +174,6 @@
               }
             }
           ],
-          "response": []
-        },
-        {
-          "name": "Reject Invalid URL",
           "request": {
             "method": "POST",
             "header": [
@@ -205,16 +185,30 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"originalUrl\": \"not a URL\"\n}",
+              "raw": "{}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": "{{baseUrl}}/api/v1/links",
-            "description": "Verifies malformed URL validation."
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/links",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "links"
+              ]
+            },
+            "description": "Verifies that originalUrl is required."
           },
+          "response": []
+        },
+        {
+          "name": "Reject Invalid URL",
           "event": [
             {
               "listen": "test",
@@ -242,10 +236,6 @@
               }
             }
           ],
-          "response": []
-        },
-        {
-          "name": "Reject Unsupported Protocol",
           "request": {
             "method": "POST",
             "header": [
@@ -257,16 +247,30 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"originalUrl\": \"ftp://example.com/file.zip\"\n}",
+              "raw": "{\n  \"originalUrl\": \"not a URL\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": "{{baseUrl}}/api/v1/links",
-            "description": "Verifies that only HTTP and HTTPS protocols are accepted."
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/links",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "links"
+              ]
+            },
+            "description": "Verifies malformed URL validation."
           },
+          "response": []
+        },
+        {
+          "name": "Reject Unsupported Protocol",
           "event": [
             {
               "listen": "test",
@@ -294,10 +298,6 @@
               }
             }
           ],
-          "response": []
-        },
-        {
-          "name": "Reject Unsupported Request Field",
           "request": {
             "method": "POST",
             "header": [
@@ -309,16 +309,30 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"originalUrl\": \"https://example.com\",\n  \"unsupportedField\": true\n}",
+              "raw": "{\n  \"originalUrl\": \"ftp://example.com/file.zip\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": "{{baseUrl}}/api/v1/links",
-            "description": "Verifies that the request body rejects unknown properties."
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/links",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "links"
+              ]
+            },
+            "description": "Verifies that only HTTP and HTTPS protocols are accepted."
           },
+          "response": []
+        },
+        {
+          "name": "Reject Unsupported Request Field",
           "event": [
             {
               "listen": "test",
@@ -338,10 +352,6 @@
               }
             }
           ],
-          "response": []
-        },
-        {
-          "name": "Reject Malformed JSON",
           "request": {
             "method": "POST",
             "header": [
@@ -353,16 +363,30 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"originalUrl\":\n",
+              "raw": "{\n  \"originalUrl\": \"https://example.com\",\n  \"unsupportedField\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": "{{baseUrl}}/api/v1/links",
-            "description": "Verifies the response returned when JSON parsing fails."
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/links",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "links"
+              ]
+            },
+            "description": "Verifies that the request body rejects unknown properties."
           },
+          "response": []
+        },
+        {
+          "name": "Reject Malformed JSON",
           "event": [
             {
               "listen": "test",
@@ -386,9 +410,206 @@
               }
             }
           ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"originalUrl\":\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/links",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "links"
+              ]
+            },
+            "description": "Verifies the response returned when JSON parsing fails."
+          },
           "response": []
         }
       ]
+    },
+    {
+      "name": "Redirect Short Link",
+      "item": [
+        {
+          "name": "Redirect Created Short Link",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 302', function () {\r",
+                  "  pm.response.to.have.status(302)\r",
+                  "})\r",
+                  "\r",
+                  "pm.test('Location header contains the original URL', function () {\r",
+                  "  pm.expect(pm.response.headers.get('Location')).to.eql(\r",
+                  "    'https://example.com/products?id=123',\r",
+                  "  )\r",
+                  "})\r",
+                  "\r",
+                  "pm.test('Short URL variable was created', function () {\r",
+                  "  const shortUrl = pm.collectionVariables.get('shortUrl')\r",
+                  "\r",
+                  "  pm.expect(shortUrl).to.be.a('string')\r",
+                  "  pm.expect(shortUrl).to.match(\r",
+                  "    /^http:\\/\\/localhost:5056\\/[A-Za-z0-9]{7}$/,\r",
+                  "  )\r",
+                  "})\r",
+                  "\r",
+                  "pm.test('Response does not expose API error JSON', function () {\r",
+                  "  pm.expect(pm.response.headers.get('Content-Type')).to.not.include(\r",
+                  "    'application/json',\r",
+                  "  )\r",
+                  "})"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{shortUrl}}",
+              "host": [
+                "{{shortUrl}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Unknown Valid Short Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const responseBody = pm.response.json()\r",
+                  "\r",
+                  "pm.test('Status code is 404', function () {\r",
+                  "  pm.response.to.have.status(404)\r",
+                  "})\r",
+                  "\r",
+                  "pm.test('Error code is LINK_NOT_FOUND', function () {\r",
+                  "  pm.expect(responseBody.error.code).to.eql('LINK_NOT_FOUND')\r",
+                  "})\r",
+                  "\r",
+                  "pm.test('Error message explains that the link does not exist', function () {\r",
+                  "  pm.expect(responseBody.error.message).to.eql(\r",
+                  "    'The requested short link does not exist.',\r",
+                  "  )\r",
+                  "})"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/NoLink1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "NoLink1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Invalid Short Code Format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const responseBody = pm.response.json()\r",
+                  "\r",
+                  "pm.test('Status code is 404', function () {\r",
+                  "  pm.response.to.have.status(404)\r",
+                  "})\r",
+                  "\r",
+                  "pm.test('Error code is ROUTE_NOT_FOUND', function () {\r",
+                  "  pm.expect(responseBody.error.code).to.eql('ROUTE_NOT_FOUND')\r",
+                  "})\r",
+                  "\r",
+                  "pm.test('Error identifies the invalid route', function () {\r",
+                  "  pm.expect(responseBody.error.message).to.eql(\r",
+                  "    'Route GET /not-valid does not exist.',\r",
+                  "  )\r",
+                  "})"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/not-valid",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "not-valid"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5056"
+    },
+    {
+      "key": "shortCode",
+      "value": ""
+    },
+    {
+      "key": "shortUrl",
+      "value": ""
     }
   ]
 }
