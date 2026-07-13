@@ -1,6 +1,18 @@
 import express from 'express'
+import {
+  errorHandler,
+  notFoundHandler,
+} from './middleware/errorHandlers.js'
+import { createInMemoryLinkRepository } from './repositories/inMemoryLinkRepository.js'
+import { createLinkRouter } from './routes/linkRoutes.js'
+import { createLinkService } from './services/linkService.js'
+import { generateShortCode } from './utils/shortCode.js'
 
-export function createApp() {
+export function createApp({
+  linkRepository = createInMemoryLinkRepository(),
+  codeGenerator = generateShortCode,
+  now = () => new Date(),
+} = {}) {
   const app = express()
 
   app.disable('x-powered-by')
@@ -11,25 +23,27 @@ export function createApp() {
     }),
   )
 
+  const linkService = createLinkService({
+    linkRepository,
+    codeGenerator,
+    now,
+  })
+
   app.get('/health', (request, response) => {
     void request
 
     return response.status(200).json({
       status: 'UP',
       service: 'shrtn-api',
-      version: '0.1.0',
+      version: '0.2.0',
       timestamp: new Date().toISOString(),
     })
   })
 
-  app.use((request, response) => {
-    return response.status(404).json({
-      error: {
-        code: 'ROUTE_NOT_FOUND',
-        message: `Route ${request.method} ${request.originalUrl} does not exist.`,
-      },
-    })
-  })
+  app.use('/api/v1/links', createLinkRouter({ linkService }))
+
+  app.use(notFoundHandler)
+  app.use(errorHandler)
 
   return app
 }
