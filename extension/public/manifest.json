@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Shrtn",
+  "description": "Shorten links and generate shareable QR codes from your browser.",
+  "version": "0.1.0",
+  "action": {
+    "default_title": "Open Shrtn",
+    "default_popup": "index.html"
+  }
+}
