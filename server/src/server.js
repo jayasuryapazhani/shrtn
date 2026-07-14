@@ -1,13 +1,27 @@
 import 'dotenv/config'
 import { createApp } from './app.js'
-import { resolvePort } from './config/environment.js'
+import {
+  resolvePort,
+  resolvePublicBaseUrl,
+} from './config/environment.js'
 import { createDatabasePool } from './database/pool.js'
 import { createPostgresLinkRepository } from './repositories/postgresLinkRepository.js'
 
 let port
+let publicBaseUrl
 
 try {
   port = resolvePort(process.env.PORT)
+
+  const railwayBaseUrl =
+    process.env.RAILWAY_PUBLIC_DOMAIN
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      : undefined
+
+  publicBaseUrl = resolvePublicBaseUrl(
+    process.env.PUBLIC_BASE_URL ??
+      railwayBaseUrl,
+  )
 } catch (error) {
   const message =
     error instanceof Error
@@ -38,6 +52,7 @@ const linkRepository = createPostgresLinkRepository({
 
 const app = createApp({
   linkRepository,
+  publicBaseUrl,
 })
 
 let server
@@ -47,15 +62,29 @@ async function startServer() {
   await pool.query('SELECT 1')
 
   server = app.listen(port, () => {
-    console.log(`[Shrtn API] Running at http://localhost:${port}`)
+    console.log(
+      `[Shrtn API] Running on port ${port}`,
+    )
+
     console.log('[Shrtn API] PostgreSQL connected.')
+
+    console.log(
+      publicBaseUrl
+        ? `[Shrtn API] Public URL: ${publicBaseUrl}`
+        : `[Shrtn API] Local URL: http://localhost:${port}`,
+    )
   })
 
   server.on('error', async (error) => {
     if (error.code === 'EADDRINUSE') {
-      console.error(`[Shrtn API] Port ${port} is already in use.`)
+      console.error(
+        `[Shrtn API] Port ${port} is already in use.`,
+      )
     } else {
-      console.error('[Shrtn API] Failed to start.', error)
+      console.error(
+        '[Shrtn API] Failed to start.',
+        error,
+      )
     }
 
     await pool.end()
@@ -70,7 +99,9 @@ async function shutdown(signal) {
 
   shuttingDown = true
 
-  console.log(`[Shrtn API] ${signal} received. Shutting down.`)
+  console.log(
+    `[Shrtn API] ${signal} received. Shutting down.`,
+  )
 
   if (server) {
     await new Promise((resolve, reject) => {
@@ -102,7 +133,9 @@ process.on('SIGTERM', () => {
 startServer().catch(async (error) => {
   console.error(
     '[Shrtn API] Database connection failed.',
-    error instanceof Error ? error.message : error,
+    error instanceof Error
+      ? error.message
+      : error,
   )
 
   await pool.end()

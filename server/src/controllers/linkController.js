@@ -1,7 +1,12 @@
 export function createLinkController({ linkService }) {
   return {
     async create(request, response) {
-      const baseUrl = `${request.protocol}://${request.get('host')}`
+      const requestBaseUrl =
+        `${request.protocol}://${request.get('host')}`
+
+      const baseUrl =
+        request.app.locals.publicBaseUrl ??
+        requestBaseUrl
 
       const link = await linkService.createLink({
         originalUrl: request.validatedBody.originalUrl,

@@ -13,10 +13,13 @@ export function createApp({
   linkRepository = createInMemoryLinkRepository(),
   codeGenerator = generateShortCode,
   now = () => new Date(),
+  publicBaseUrl,
 } = {}) {
   const app = express()
 
   app.disable('x-powered-by')
+
+  app.locals.publicBaseUrl = publicBaseUrl
 
   app.use(
     express.json({
@@ -36,7 +39,7 @@ export function createApp({
     return response.status(200).json({
       status: 'UP',
       service: 'shrtn-api',
-      version: '0.4.0',
+      version: '0.5.0',
       timestamp: new Date().toISOString(),
     })
   })
