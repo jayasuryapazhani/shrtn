@@ -1,6 +1,7 @@
 import { AppError } from '../errors/AppError.js'
 
 const MAX_CODE_GENERATION_ATTEMPTS = 5
+const UNIQUE_VIOLATION_CODE = '23505'
 
 export function createLinkService({
   linkRepository,
@@ -8,7 +9,7 @@ export function createLinkService({
   now = () => new Date(),
 }) {
   return {
-    createLink({ originalUrl, baseUrl }) {
+    async createLink({ originalUrl, baseUrl }) {
       const normalizedBaseUrl = baseUrl.replace(/\/+$/, '')
 
       for (
@@ -18,15 +19,29 @@ export function createLinkService({
       ) {
         const shortCode = codeGenerator()
 
-        if (!linkRepository.existsByCode(shortCode)) {
-          const link = {
+        if (await linkRepository.existsByCode(shortCode)) {
+          continue
+        }
+
+        const createdAt = now().toISOString()
+
+        try {
+          const storedLink = await linkRepository.save({
             originalUrl,
             shortCode,
+            createdAt,
+          })
+
+          return {
+            ...storedLink,
             shortUrl: `${normalizedBaseUrl}/${shortCode}`,
-            createdAt: now().toISOString(),
+          }
+        } catch (error) {
+          if (error?.code === UNIQUE_VIOLATION_CODE) {
+            continue
           }
 
-          return linkRepository.save(link)
+          throw error
         }
       }
 
@@ -37,8 +52,8 @@ export function createLinkService({
       })
     },
 
-    getLinkByCode(shortCode) {
-      const link = linkRepository.findByCode(shortCode)
+    async getLinkByCode(shortCode) {
+      const link = await linkRepository.findByCode(shortCode)
 
       if (!link) {
         throw new AppError({
