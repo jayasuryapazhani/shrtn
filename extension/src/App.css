@@ -1,3 +1,7 @@
+* {
+  box-sizing: border-box;
+}
+
 #root {
   min-width: 360px;
 }
@@ -63,6 +67,7 @@
 
 .panel input {
   width: 100%;
+  min-width: 0;
   min-height: 44px;
   padding: 0 12px;
   border: 1px solid #d5d5da;
@@ -86,16 +91,40 @@
   color: #77777f;
 }
 
-.panel button {
-  width: 100%;
+.button {
   min-height: 44px;
-  margin-top: 14px;
   border: 0;
   border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button:disabled {
   background: #b8b8be;
   color: #ffffff;
-  font-weight: 700;
   cursor: not-allowed;
+}
+
+.button--primary {
+  width: 100%;
+  margin-top: 14px;
+  background: #171719;
+  color: #ffffff;
+}
+
+.button--primary:not(:disabled):hover {
+  background: #303034;
+}
+
+.button--copy {
+  min-width: 76px;
+  padding: 0 12px;
+  background: #ededf0;
+  color: #171719;
+}
+
+.button--copy:hover {
+  background: #dedee3;
 }
 
 .helper {
@@ -115,6 +144,41 @@
 
 .helper--error {
   color: #b42318;
+}
+
+.result {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #e5e5e8;
+}
+
+.result__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.result__header h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.result__header span {
+  color: #65656d;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.result__field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.result__field input {
+  font-size: 12px;
 }
 
 .status {
