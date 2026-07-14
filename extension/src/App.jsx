@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { createShortLink } from './services/linkApi'
+import { createQrCodeDataUrl } from './services/qrCodeService'
 import { getActiveTabUrl } from './services/tabService'
 import { isSupportedWebUrl } from './utils/url'
 
 function App() {
   const [url, setUrl] = useState('')
   const [shortLink, setShortLink] = useState(null)
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [copyLabel, setCopyLabel] = useState('Copy')
   const [statusType, setStatusType] = useState('loading')
@@ -69,6 +71,7 @@ function App() {
 
     setUrl(nextUrl)
     setShortLink(null)
+    setQrCodeDataUrl('')
     setCopyLabel('Copy')
 
     if (!nextUrl.trim()) {
@@ -98,6 +101,7 @@ function App() {
 
     setIsSubmitting(true)
     setShortLink(null)
+    setQrCodeDataUrl('')
     setCopyLabel('Copy')
     setStatusType('loading')
     setStatusMessage('Creating your short link...')
@@ -106,10 +110,24 @@ function App() {
       const createdLink = await createShortLink(url)
 
       setShortLink(createdLink)
-      setStatusType('success')
-      setStatusMessage(
-        'Short link created and saved successfully.',
-      )
+      setStatusMessage('Generating QR code...')
+
+      try {
+        const generatedQrCode = await createQrCodeDataUrl(
+          createdLink.shortUrl,
+        )
+
+        setQrCodeDataUrl(generatedQrCode)
+        setStatusType('success')
+        setStatusMessage(
+          'Short link and QR code created successfully.',
+        )
+      } catch {
+        setStatusType('error')
+        setStatusMessage(
+          'Short link created, but the QR code could not be generated.',
+        )
+      }
     } catch (error) {
       setStatusType('error')
       setStatusMessage(
@@ -196,7 +214,7 @@ function App() {
             }
           >
             {isSubmitting
-              ? 'Shortening...'
+              ? 'Creating...'
               : 'Shorten URL'}
           </button>
         </form>
@@ -219,7 +237,6 @@ function App() {
           >
             <div className="result__header">
               <h3 id="result-heading">Short URL</h3>
-
               <span>{shortLink.shortCode}</span>
             </div>
 
@@ -239,6 +256,23 @@ function App() {
                 {copyLabel}
               </button>
             </div>
+
+            {qrCodeDataUrl && (
+              <div className="qr">
+                <img
+                  src={qrCodeDataUrl}
+                  alt={`QR code for ${shortLink.shortUrl}`}
+                />
+
+                <a
+                  className="button button--download"
+                  href={qrCodeDataUrl}
+                  download={`shrtn-${shortLink.shortCode}.png`}
+                >
+                  Download QR
+                </a>
+              </div>
+            )}
           </section>
         )}
       </section>
@@ -248,7 +282,7 @@ function App() {
           className="status__dot"
           aria-hidden="true"
         />
-        PostgreSQL-backed shortening enabled
+        Short links and QR codes enabled
       </footer>
     </main>
   )
