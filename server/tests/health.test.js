@@ -14,7 +14,7 @@ describe('GET /health', () => {
     expect(response.body).toMatchObject({
       status: 'UP',
       service: 'shrtn-api',
-      version: '0.3.0',
+      version: '0.4.0',
     })
 
     expect(typeof response.body.timestamp).toBe('string')

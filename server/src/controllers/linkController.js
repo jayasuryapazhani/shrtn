@@ -1,9 +1,9 @@
 export function createLinkController({ linkService }) {
   return {
-    create(request, response) {
+    async create(request, response) {
       const baseUrl = `${request.protocol}://${request.get('host')}`
 
-      const link = linkService.createLink({
+      const link = await linkService.createLink({
         originalUrl: request.validatedBody.originalUrl,
         baseUrl,
       })
@@ -16,8 +16,8 @@ export function createLinkController({ linkService }) {
         })
     },
 
-    redirect(request, response) {
-      const link = linkService.getLinkByCode(
+    async redirect(request, response) {
+      const link = await linkService.getLinkByCode(
         request.params.shortCode,
       )
 
