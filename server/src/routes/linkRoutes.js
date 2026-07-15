@@ -4,13 +4,20 @@ import { validateBody } from '../middleware/validateRequest.js'
 import { validateShortCodeParam } from '../middleware/validateShortCode.js'
 import { createLinkSchema } from '../validation/linkSchemas.js'
 
-export function createLinkRouter({ linkService }) {
+export function createLinkRouter({
+  linkService,
+  createLinkLimiter,
+}) {
   const router = Router()
+
   const linkController =
-    createLinkController({ linkService })
+    createLinkController({
+      linkService,
+    })
 
   router.post(
     '/',
+    createLinkLimiter,
     validateBody(createLinkSchema),
     linkController.create,
   )
