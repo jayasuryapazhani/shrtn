@@ -296,44 +296,80 @@ function App() {
   return (
     <main className="popup">
       <header className="brand">
-        <div
-          className="brand__mark"
-          aria-hidden="true"
-        >
-          S
+        <div className="brand__identity">
+          <img
+            className="brand__logo"
+            src="/assets/link-logo.png"
+            alt=""
+          />
+
+          <div>
+            <h1>Shrtn</h1>
+            <p>Shorten. Track. Share.</p>
+          </div>
         </div>
 
-        <div>
-          <h1>Shrtn</h1>
-          <p>Shorten. Scan. Share.</p>
-        </div>
+        <a
+          className="brand__website"
+          href="https://shrtn.up.railway.app"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Website
+          <span aria-hidden="true">↗</span>
+        </a>
       </header>
 
       <section
-        className="panel"
+        className="panel sketch-panel"
         aria-labelledby="create-link-heading"
       >
-        <h2 id="create-link-heading">
-          Create a short link
-        </h2>
+        <div className="panel__heading">
+          <p className="eyebrow">
+            Browser extension
+          </p>
 
-        <form onSubmit={handleSubmit}>
-          <label htmlFor="url">URL</label>
+          <h2 id="create-link-heading">
+            Shorten this link
+          </h2>
 
-          <input
-            id="url"
-            name="url"
-            type="url"
-            value={url}
-            placeholder="https://example.com"
-            aria-invalid={
-              url.length > 0 && !isValidUrl
-            }
-            disabled={
-              isReadingTab || isSubmitting
-            }
-            onChange={handleUrlChange}
+          <span
+            className="sketch-underline"
+            aria-hidden="true"
           />
+        </div>
+
+        <form
+          aria-busy={isSubmitting}
+          onSubmit={handleSubmit}
+        >
+          <label htmlFor="url">
+            URL
+          </label>
+
+          <div className="url-field">
+            <span
+              className="url-field__icon"
+              aria-hidden="true"
+            >
+              ↗
+            </span>
+
+            <input
+              id="url"
+              name="url"
+              type="url"
+              value={url}
+              placeholder="https://example.com"
+              aria-invalid={
+                url.length > 0 && !isValidUrl
+              }
+              disabled={
+                isReadingTab || isSubmitting
+              }
+              onChange={handleUrlChange}
+            />
+          </div>
 
           <button
             className="button button--primary"
@@ -344,8 +380,15 @@ function App() {
               isReadingTab
             }
           >
+            {isSubmitting && (
+              <span
+                className="button__spinner"
+                aria-hidden="true"
+              />
+            )}
+
             {isSubmitting
-              ? 'Creating...'
+              ? 'Shortening...'
               : 'Shorten URL'}
           </button>
         </form>
@@ -358,20 +401,42 @@ function App() {
               : 'status'
           }
         >
+          <span
+            className="helper__dot"
+            aria-hidden="true"
+          />
+
           {statusMessage}
         </p>
 
+        {isSubmitting && (
+          <section
+            className="loading-card sketch-panel"
+            aria-label="Creating short link"
+          >
+            <span className="skeleton skeleton--short" />
+            <span className="skeleton skeleton--long" />
+            <span className="skeleton skeleton--medium" />
+          </section>
+        )}
+
         {shortLink && (
           <section
-            className="result"
+            className="result sketch-panel"
             aria-labelledby="result-heading"
           >
             <div className="result__header">
-              <h3 id="result-heading">
-                Short URL
-              </h3>
+              <div>
+                <span className="result__label">
+                  Your short link
+                </span>
 
-              <span>
+                <h3 id="result-heading">
+                  Ready to share
+                </h3>
+              </div>
+
+              <span className="result__code">
                 {shortLink.shortCode}
               </span>
             </div>
@@ -391,11 +456,21 @@ function App() {
               >
                 {copyLabel}
               </button>
+
+              <a
+                className="button button--open"
+                href={shortLink.shortUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open
+              </a>
             </div>
 
             <section
               className="analytics"
               aria-labelledby="analytics-heading"
+              aria-busy={isLoadingAnalytics}
             >
               <div className="analytics__header">
                 <h3 id="analytics-heading">
@@ -466,20 +541,37 @@ function App() {
             </section>
 
             {qrCodeDataUrl && (
-              <div className="qr">
-                <img
-                  src={qrCodeDataUrl}
-                  alt={`QR code for ${shortLink.shortUrl}`}
-                />
+              <section
+                className="qr"
+                aria-labelledby="qr-heading"
+              >
+                <div className="qr__heading">
+                  <div>
+                    <span className="result__label">
+                      Share another way
+                    </span>
 
-                <a
-                  className="button button--download"
-                  href={qrCodeDataUrl}
-                  download={`shrtn-${shortLink.shortCode}.png`}
-                >
-                  Download QR
-                </a>
-              </div>
+                    <h3 id="qr-heading">
+                      QR code
+                    </h3>
+                  </div>
+
+                  <a
+                    className="button button--download"
+                    href={qrCodeDataUrl}
+                    download={`shrtn-${shortLink.shortCode}.png`}
+                  >
+                    Download
+                  </a>
+                </div>
+
+                <div className="qr__image-wrap">
+                  <img
+                    src={qrCodeDataUrl}
+                    alt={`QR code for ${shortLink.shortUrl}`}
+                  />
+                </div>
+              </section>
             )}
           </section>
         )}
@@ -490,7 +582,16 @@ function App() {
           className="status__dot"
           aria-hidden="true"
         />
-        Public shortening and analytics enabled
+
+        <span>
+          Live API
+        </span>
+
+        <span aria-hidden="true">·</span>
+
+        <span>
+          QR and analytics enabled
+        </span>
       </footer>
     </main>
   )
