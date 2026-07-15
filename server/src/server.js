@@ -46,9 +46,10 @@ try {
   process.exit(1)
 }
 
-const linkRepository = createPostgresLinkRepository({
-  pool,
-})
+const linkRepository =
+  createPostgresLinkRepository({
+    pool,
+  })
 
 const isProduction =
   process.env.NODE_ENV === 'production'
@@ -71,7 +72,9 @@ async function startServer() {
       `[Shrtn API] Running on port ${port}`,
     )
 
-    console.log('[Shrtn API] PostgreSQL connected.')
+    console.log(
+      '[Shrtn API] PostgreSQL connected.',
+    )
 
     console.log(
       publicBaseUrl
@@ -123,7 +126,10 @@ async function shutdown(signal) {
 
   await pool.end()
 
-  console.log('[Shrtn API] Shutdown complete.')
+  console.log(
+    '[Shrtn API] Shutdown complete.',
+  )
+
   process.exit(0)
 }
 

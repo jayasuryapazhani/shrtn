@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+
+    <meta
+      name="description"
+      content="Shrtn creates persistent short links, browser-based QR codes, and redirect analytics."
+    />
+
+    <meta
+      name="theme-color"
+      content="#F5E7CF"
+    />
+
+    <title>Shrtn | Shorten and Track Links</title>
+
+    <link
+      rel="icon"
+      type="image/png"
+      href="./assets/link-logo.png"
+    />
+
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Lora:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="./styles.css"
+    />
+  </head>
+
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <div class="container header-inner">
+          <a
+            class="brand"
+            href="./"
+            aria-label="Shrtn homepage"
+          >
+            <img
+              class="brand-logo"
+              src="./assets/link-logo.png"
+              alt=""
+            />
+
+            <span>Shrtn</span>
+          </a>
+
+          <nav
+            class="site-nav"
+            aria-label="Primary navigation"
+          >
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#about">Why Shrtn</a>
+            <a href="#technology">Technology</a>
+            <a href="#faq">FAQ</a>
+          </nav>
+
+          <a
+            class="button button-secondary header-action"
+            href="https://github.com/jayasuryapazhani/shrtn"
+            target="_blank"
+            rel="noreferrer"
+          >
+            View GitHub
+          </a>
+        </div>
+      </header>
+
+      <main>
+        <section class="hero">
+          <div class="container hero-layout">
+            <div class="hero-copy">
+              <p class="eyebrow">
+                Browser extension and URL-shortening API
+              </p>
+
+              <h1>
+                Shorten and track links
+              </h1>
+
+              <span
+                class="sketch-underline"
+                aria-hidden="true"
+              ></span>
+
+              <p class="hero-description">
+                Create short, persistent, trackable links.
+                Measure what matters and share with confidence.
+              </p>
+
+              <div
+                class="api-status"
+                aria-live="polite"
+              >
+                <span
+                  class="status-dot"
+                  aria-hidden="true"
+                ></span>
+
+                <span id="api-status">
+                  Checking live API status...
+                </span>
+              </div>
+            </div>
+
+            <div class="hero-tool">
+              <form
+                id="shorten-form"
+                class="shorten-form sketch-panel"
+                novalidate
+              >
+                <label
+                  class="sr-only"
+                  for="original-url"
+                >
+                  URL to shorten
+                </label>
+
+                <div class="shorten-row">
+                  <div class="url-field">
+                    <span
+                      class="url-field-icon"
+                      aria-hidden="true"
+                    >
+                      ↗
+                    </span>
+
+                    <input
+                      id="original-url"
+                      name="originalUrl"
+                      type="url"
+                      inputmode="url"
+                      autocomplete="url"
+                      placeholder="https://example.com/article"
+                      maxlength="4096"
+                      required
+                    />
+                  </div>
+
+                  <button
+                    id="shorten-button"
+                    class="button button-primary shorten-button"
+                    type="submit"
+                  >
+                    <span id="shorten-button-label">
+                      Shorten URL
+                    </span>
+
+                    <span
+                      id="shorten-spinner"
+                      class="button-spinner"
+                      aria-hidden="true"
+                      hidden
+                    ></span>
+                  </button>
+                </div>
+
+                <p class="form-hint">
+                  Paste a long URL to get started.
+                </p>
+              </form>
+
+              <p
+                id="form-message"
+                class="form-message"
+                role="status"
+                aria-live="polite"
+              ></p>
+
+              <section
+                id="loading-result"
+                class="loading-result sketch-panel"
+                aria-label="Short link is being created"
+                aria-live="polite"
+                hidden
+              >
+                <div class="loading-lines">
+                  <span class="skeleton skeleton-short"></span>
+                  <span class="skeleton skeleton-long"></span>
+                  <span class="skeleton skeleton-medium"></span>
+                </div>
+
+                <div class="loading-actions">
+                  <span class="skeleton skeleton-button"></span>
+                  <span class="skeleton skeleton-button"></span>
+                </div>
+              </section>
+
+              <section
+                id="short-link-result"
+                class="short-link-result sketch-panel"
+                aria-labelledby="result-heading"
+                hidden
+              >
+                <div class="result-top">
+                  <div class="result-link-mark" aria-hidden="true">
+                    ↗
+                  </div>
+
+                  <div class="result-title-group">
+                    <span class="result-label">
+                      Your short link
+                    </span>
+
+                    <h2 id="result-heading">
+                      Ready to share
+                    </h2>
+                  </div>
+
+                  <span
+                    id="result-short-code"
+                    class="short-code"
+                  ></span>
+
+                  <button
+                    id="copy-button"
+                    class="button button-secondary"
+                    type="button"
+                  >
+                    Copy
+                  </button>
+
+                  <a
+                    id="open-link"
+                    class="button button-secondary"
+                    href="#"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open
+                  </a>
+                </div>
+
+                <div class="result-url-wrap">
+                  <input
+                    id="short-url"
+                    type="text"
+                    aria-label="Created short URL"
+                    readonly
+                  />
+                </div>
+
+                <div class="result-metrics">
+                  <div>
+                    <span>Clicks</span>
+                    <strong id="result-click-count">0</strong>
+                  </div>
+
+                  <div>
+                    <span>Last clicked</span>
+                    <strong id="result-last-clicked">Never</strong>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <div class="container hero-benefits" id="features">
+            <article class="benefit-card sketch-panel">
+              <span class="benefit-icon" aria-hidden="true">↗</span>
+
+              <div>
+                <h2>Persistent links</h2>
+                <p>Built to last, always redirecting.</p>
+              </div>
+            </article>
+
+            <article class="benefit-card sketch-panel">
+              <span class="benefit-icon" aria-hidden="true">▥</span>
+
+              <div>
+                <h2>Click analytics</h2>
+                <p>Understand every redirect.</p>
+              </div>
+            </article>
+
+            <article class="benefit-card sketch-panel">
+              <span class="benefit-icon" aria-hidden="true">▦</span>
+
+              <div>
+                <h2>QR codes in the extension</h2>
+                <p>Generate and share instantly.</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section
+          id="how-it-works"
+          class="section information-section"
+        >
+          <div class="container information-grid">
+            <article
+              id="about"
+              class="about-card sketch-panel"
+            >
+              <div class="section-heading">
+                <p class="eyebrow">Why Shrtn?</p>
+
+                <h2>
+                  Simple, reliable link shortening with a real
+                  product behind it.
+                </h2>
+
+                <span
+                  class="sketch-underline sketch-underline-small"
+                  aria-hidden="true"
+                ></span>
+              </div>
+
+              <p class="about-intro">
+                Shrtn was built to understand how a browser
+                extension, REST API, database, deployment, tests,
+                and CI pipeline work together.
+              </p>
+
+              <div class="reason-list">
+                <div>
+                  <span aria-hidden="true">◇</span>
+
+                  <div>
+                    <h3>Reliable and persistent</h3>
+                    <p>Links remain available after restarts.</p>
+                  </div>
+                </div>
+
+                <div>
+                  <span aria-hidden="true">◔</span>
+
+                  <div>
+                    <h3>Actionable analytics</h3>
+                    <p>Track clicks and recent redirect activity.</p>
+                  </div>
+                </div>
+
+                <div>
+                  <span aria-hidden="true">⌘</span>
+
+                  <div>
+                    <h3>Browser extension</h3>
+                    <p>Shorten the active tab and create QR codes.</p>
+                  </div>
+                </div>
+
+                <div>
+                  <span aria-hidden="true">&lt;/&gt;</span>
+
+                  <div>
+                    <h3>Open source</h3>
+                    <p>Transparent code and documented architecture.</p>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article
+              id="faq"
+              class="faq-card sketch-panel"
+            >
+              <div class="section-heading">
+                <p class="eyebrow">
+                  Frequently asked
+                </p>
+
+                <h2>About Shrtn</h2>
+
+                <span
+                  class="sketch-underline sketch-underline-small"
+                  aria-hidden="true"
+                ></span>
+              </div>
+
+              <div class="faq-list">
+                <details>
+                  <summary>Are links persistent?</summary>
+                  <p>
+                    Yes. Link records are stored in PostgreSQL
+                    and remain available across restarts.
+                  </p>
+                </details>
+
+                <details>
+                  <summary>Does Shrtn track clicks?</summary>
+                  <p>
+                    Yes. Each redirect increments the click count
+                    and updates the last-clicked timestamp.
+                  </p>
+                </details>
+
+                <details>
+                  <summary>Does Shrtn create QR codes?</summary>
+                  <p>
+                    Yes. The browser extension generates
+                    downloadable QR codes for short links.
+                  </p>
+                </details>
+
+                <details>
+                  <summary>Is there a public API?</summary>
+                  <p>
+                    Yes. Shrtn includes documented endpoints for
+                    creation, redirects, analytics, and health.
+                  </p>
+                </details>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section
+          id="technology"
+          class="section technology-section"
+        >
+          <div class="container technology-inner sketch-panel">
+            <div class="section-heading">
+              <p class="eyebrow">Technology</p>
+
+              <h2>A production-focused stack</h2>
+            </div>
+
+            <div class="technology-grid">
+              <div>
+                <span>Extension</span>
+                <strong>React, Vite, Manifest V3</strong>
+              </div>
+
+              <div>
+                <span>Backend</span>
+                <strong>Node.js, Express, Zod</strong>
+              </div>
+
+              <div>
+                <span>Database</span>
+                <strong>PostgreSQL, Neon</strong>
+              </div>
+
+              <div>
+                <span>Deployment</span>
+                <strong>Railway</strong>
+              </div>
+
+              <div>
+                <span>Testing</span>
+                <strong>Vitest, Supertest, Postman</strong>
+              </div>
+
+              <div>
+                <span>Delivery</span>
+                <strong>GitHub Actions</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="container footer-inner">
+          <a
+            class="brand footer-brand"
+            href="./"
+          >
+            <img
+              class="brand-logo"
+              src="./assets/link-logo.png"
+              alt=""
+            />
+
+            <span>Shrtn</span>
+          </a>
+
+          <nav
+            class="footer-nav"
+            aria-label="Footer navigation"
+          >
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#about">Why Shrtn</a>
+            <a href="#technology">Technology</a>
+          </nav>
+
+          <div class="footer-links">
+            <a href="/health">API Health</a>
+
+            <a
+              href="https://github.com/jayasuryapazhani/shrtn"
+              target="_blank"
+              rel="noreferrer"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
+
+        <div class="container footer-meta">
+          <span>© 2026 Shrtn</span>
+          <span>Built by Jayasurya Pazhani</span>
+        </div>
+      </footer>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
