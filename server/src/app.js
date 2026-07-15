@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import express from 'express'
 import {
   errorHandler,
@@ -12,6 +13,10 @@ import { createLinkRouter } from './routes/linkRoutes.js'
 import { createRedirectRouter } from './routes/redirectRoutes.js'
 import { createLinkService } from './services/linkService.js'
 import { generateShortCode } from './utils/shortCode.js'
+
+const PUBLIC_DIRECTORY = fileURLToPath(
+  new URL('../public', import.meta.url),
+)
 
 export function createApp({
   linkRepository =
@@ -28,11 +33,20 @@ export function createApp({
 
   app.set('trust proxy', trustProxy)
   app.disable('x-powered-by')
-app.locals.publicBaseUrl = publicBaseUrl
+
+  app.locals.publicBaseUrl =
+    publicBaseUrl
 
   app.use(
     createHelmetMiddleware({
       isProduction,
+    }),
+  )
+
+  app.use(
+    express.static(PUBLIC_DIRECTORY, {
+      index: 'index.html',
+      fallthrough: true,
     }),
   )
 
@@ -48,18 +62,25 @@ app.locals.publicBaseUrl = publicBaseUrl
     now,
   })
 
-  app.get('/health', (request, response) => {
-    void request
+  app.get(
+    '/health',
+    (request, response) => {
+      void request
 
-    return response.status(200).json({
-      status: 'UP',
-      service: 'shrtn-api',
-      version: '0.8.0',
-      timestamp: new Date().toISOString(),
-    })
-  })
+      return response.status(200).json({
+        status: 'UP',
+        service: 'shrtn-api',
+        version: '0.8.0',
+        timestamp:
+          new Date().toISOString(),
+      })
+    },
+  )
 
-  app.use('/api/v1', rateLimiters.api)
+  app.use(
+    '/api/v1',
+    rateLimiters.api,
+  )
 
   app.use(
     '/api/v1/links',
