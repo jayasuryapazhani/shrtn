@@ -74,7 +74,7 @@ describe('GET /:shortCode', () => {
       .mockImplementation(() => {})
 
     const failingRepository = {
-      findByCode() {
+      recordClick() {
         throw new Error('Repository unavailable')
       },
     }
@@ -102,4 +102,40 @@ describe('GET /:shortCode', () => {
       consoleError.mockRestore()
     }
   })
+  it('records a click before redirecting', async () => {
+  const recordClick = vi
+    .fn()
+    .mockResolvedValue({
+      originalUrl:
+        'https://example.com/analytics',
+      shortCode: 'Click12',
+      createdAt:
+        '2026-07-13T03:00:00.000Z',
+      clickCount: 1,
+      lastClickedAt:
+        FIXED_DATE.toISOString(),
+    })
+
+  const app = createApp({
+    linkRepository: {
+      recordClick,
+    },
+    now: fixedNow,
+  })
+
+  const response = await request(app)
+    .get('/Click12')
+    .redirects(0)
+
+  expect(response.status).toBe(302)
+
+  expect(response.headers.location).toBe(
+    'https://example.com/analytics',
+  )
+
+  expect(recordClick).toHaveBeenCalledWith(
+    'Click12',
+    FIXED_DATE.toISOString(),
+  )
+})
 })

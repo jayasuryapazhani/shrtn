@@ -1,3 +1,11 @@
+function mapStoredLink(storedLink) {
+  return {
+    originalUrl: storedLink.originalUrl,
+    shortCode: storedLink.shortCode,
+    createdAt: storedLink.createdAt,
+  }
+}
+
 export function createInMemoryLinkRepository() {
   const linksByCode = new Map()
 
@@ -7,17 +15,46 @@ export function createInMemoryLinkRepository() {
     },
 
     save(link) {
-      const storedLink = { ...link }
+      const storedLink = {
+        ...link,
+        clickCount: 0,
+        lastClickedAt: null,
+      }
 
-      linksByCode.set(storedLink.shortCode, storedLink)
+      linksByCode.set(
+        storedLink.shortCode,
+        storedLink,
+      )
 
-      return { ...storedLink }
+      return mapStoredLink(storedLink)
     },
 
     findByCode(shortCode) {
-      const link = linksByCode.get(shortCode)
+      const storedLink =
+        linksByCode.get(shortCode)
 
-      return link ? { ...link } : null
+      return storedLink
+        ? mapStoredLink(storedLink)
+        : null
+    },
+
+    recordClick(shortCode, clickedAt) {
+      const storedLink =
+        linksByCode.get(shortCode)
+
+      if (!storedLink) {
+        return null
+      }
+
+      storedLink.clickCount += 1
+      storedLink.lastClickedAt = clickedAt
+
+      return {
+        ...mapStoredLink(storedLink),
+        clickCount: storedLink.clickCount,
+        lastClickedAt:
+          storedLink.lastClickedAt,
+      }
     },
 
     count() {

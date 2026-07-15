@@ -100,4 +100,77 @@ describe('PostgreSQL link repository', () => {
       repository.findByCode('NoLink1'),
     ).resolves.toBeNull()
   })
+  it('atomically records and returns a click', async () => {
+  const pool = {
+    query: vi.fn().mockResolvedValue({
+      rowCount: 1,
+      rows: [
+        {
+          original_url:
+            'https://example.com',
+          short_code: 'AbC123x',
+          created_at: new Date(
+            '2026-07-13T03:00:00.000Z',
+          ),
+          click_count: '3',
+          last_clicked_at: new Date(
+            '2026-07-15T01:00:00.000Z',
+          ),
+        },
+      ],
+    }),
+  }
+
+  const repository =
+    createPostgresLinkRepository({
+      pool,
+    })
+
+  await expect(
+    repository.recordClick(
+      'AbC123x',
+      '2026-07-15T01:00:00.000Z',
+    ),
+  ).resolves.toEqual({
+    originalUrl:
+      'https://example.com',
+    shortCode: 'AbC123x',
+    createdAt:
+      '2026-07-13T03:00:00.000Z',
+    clickCount: 3,
+    lastClickedAt:
+      '2026-07-15T01:00:00.000Z',
+  })
+
+  expect(pool.query).toHaveBeenCalledWith(
+    expect.stringContaining(
+      'click_count = click_count + 1',
+    ),
+    [
+      'AbC123x',
+      '2026-07-15T01:00:00.000Z',
+    ],
+  )
+})
+
+it('returns null when recording an unknown code', async () => {
+  const pool = {
+    query: vi.fn().mockResolvedValue({
+      rowCount: 0,
+      rows: [],
+    }),
+  }
+
+  const repository =
+    createPostgresLinkRepository({
+      pool,
+    })
+
+  await expect(
+    repository.recordClick(
+      'NoLink1',
+      '2026-07-15T01:00:00.000Z',
+    ),
+  ).resolves.toBeNull()
+})
 })
