@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Shrtn",
   "description": "Shorten links and generate shareable QR codes from your browser.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "permissions": [
     "activeTab",
     "clipboardWrite"
