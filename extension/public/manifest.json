@@ -1,15 +1,14 @@
-
 {
   "manifest_version": 3,
   "name": "Shrtn",
   "description": "Shorten links and generate shareable QR codes from your browser.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "permissions": [
     "activeTab",
     "clipboardWrite"
   ],
   "host_permissions": [
-    "http://localhost/*"
+    "https://shrtn.up.railway.app/*"
   ],
   "action": {
     "default_title": "Open Shrtn",
