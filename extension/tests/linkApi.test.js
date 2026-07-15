@@ -5,7 +5,10 @@ import {
   it,
   vi,
 } from 'vitest'
-import { createShortLink } from '../src/services/linkApi'
+import {
+  createShortLink,
+  getLinkAnalytics,
+} from '../src/services/linkApi'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -100,6 +103,93 @@ describe('createShortLink', () => {
       createShortLink('https://example.com'),
     ).rejects.toThrow(
       'Shrtn API response did not include a short URL.',
+    )
+  })
+})
+describe('getLinkAnalytics', () => {
+  it('returns analytics for a short code', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        data: {
+          originalUrl:
+            'https://example.com',
+          shortCode: 'AbC123x',
+          createdAt:
+            '2026-07-15T01:00:00.000Z',
+          clickCount: 3,
+          lastClickedAt:
+            '2026-07-15T02:00:00.000Z',
+        },
+      }),
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result =
+      await getLinkAnalytics('AbC123x')
+
+    expect(result.clickCount).toBe(3)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://shrtn.up.railway.app/api/v1/links/AbC123x/analytics',
+      {
+        method: 'GET',
+      },
+    )
+  })
+
+  it('returns an analytics API error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: vi.fn().mockResolvedValue({
+          error: {
+            message:
+              'The requested short link does not exist.',
+          },
+        }),
+      }),
+    )
+
+    await expect(
+      getLinkAnalytics('NoLink1'),
+    ).rejects.toThrow(
+      'The requested short link does not exist.',
+    )
+  })
+
+  it('reports when analytics cannot reach the API', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(
+        new Error('Connection refused'),
+      ),
+    )
+
+    await expect(
+      getLinkAnalytics('AbC123x'),
+    ).rejects.toThrow(
+      'Shrtn API is temporarily unavailable. Please try again.',
+    )
+  })
+
+  it('rejects an invalid analytics response', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          data: {},
+        }),
+      }),
+    )
+
+    await expect(
+      getLinkAnalytics('AbC123x'),
+    ).rejects.toThrow(
+      'Shrtn API response did not include valid analytics.',
     )
   })
 })

@@ -1,20 +1,57 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
-import { createShortLink } from './services/linkApi'
+import {
+  createShortLink,
+  getLinkAnalytics,
+} from './services/linkApi'
 import { createQrCodeDataUrl } from './services/qrCodeService'
 import { getActiveTabUrl } from './services/tabService'
 import { isSupportedWebUrl } from './utils/url'
 
+const dateTimeFormatter = new Intl.DateTimeFormat(
+  undefined,
+  {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  },
+)
+
+function formatDateTime(value) {
+  if (!value) {
+    return 'Never'
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Unavailable'
+  }
+
+  return dateTimeFormatter.format(date)
+}
+
 function App() {
   const [url, setUrl] = useState('')
   const [shortLink, setShortLink] = useState(null)
-  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [copyLabel, setCopyLabel] = useState('Copy')
-  const [statusType, setStatusType] = useState('loading')
-  const [statusMessage, setStatusMessage] = useState(
-    'Reading current tab...',
-  )
+  const [analytics, setAnalytics] = useState(null)
+  const [analyticsError, setAnalyticsError] =
+    useState('')
+  const [qrCodeDataUrl, setQrCodeDataUrl] =
+    useState('')
+  const [isReadingTab, setIsReadingTab] =
+    useState(true)
+  const [isSubmitting, setIsSubmitting] =
+    useState(false)
+  const [
+    isLoadingAnalytics,
+    setIsLoadingAnalytics,
+  ] = useState(false)
+  const [copyLabel, setCopyLabel] =
+    useState('Copy')
+  const [statusType, setStatusType] =
+    useState('loading')
+  const [statusMessage, setStatusMessage] =
+    useState('Reading current tab...')
 
   const isValidUrl = useMemo(
     () => isSupportedWebUrl(url),
@@ -26,7 +63,8 @@ function App() {
 
     async function loadActiveTab() {
       try {
-        const activeUrl = await getActiveTabUrl()
+        const activeUrl =
+          await getActiveTabUrl()
 
         if (cancelled) {
           return
@@ -56,6 +94,10 @@ function App() {
             ? error.message
             : 'The current tab could not be read.',
         )
+      } finally {
+        if (!cancelled) {
+          setIsReadingTab(false)
+        }
       }
     }
 
@@ -66,23 +108,33 @@ function App() {
     }
   }, [])
 
+  function resetGeneratedContent() {
+    setShortLink(null)
+    setAnalytics(null)
+    setAnalyticsError('')
+    setQrCodeDataUrl('')
+    setCopyLabel('Copy')
+  }
+
   function handleUrlChange(event) {
     const nextUrl = event.target.value
 
     setUrl(nextUrl)
-    setShortLink(null)
-    setQrCodeDataUrl('')
-    setCopyLabel('Copy')
+    resetGeneratedContent()
 
     if (!nextUrl.trim()) {
       setStatusType('error')
-      setStatusMessage('Enter an HTTP or HTTPS URL.')
+      setStatusMessage(
+        'Enter an HTTP or HTTPS URL.',
+      )
       return
     }
 
     if (isSupportedWebUrl(nextUrl)) {
       setStatusType('success')
-      setStatusMessage('URL is ready to shorten.')
+      setStatusMessage(
+        'URL is ready to shorten.',
+      )
       return
     }
 
@@ -100,32 +152,69 @@ function App() {
     }
 
     setIsSubmitting(true)
-    setShortLink(null)
-    setQrCodeDataUrl('')
-    setCopyLabel('Copy')
+    resetGeneratedContent()
     setStatusType('loading')
-    setStatusMessage('Creating your short link...')
+    setStatusMessage(
+      'Creating your short link...',
+    )
 
     try {
-      const createdLink = await createShortLink(url)
+      const createdLink =
+        await createShortLink(url)
 
       setShortLink(createdLink)
-      setStatusMessage('Generating QR code...')
 
-      try {
-        const generatedQrCode = await createQrCodeDataUrl(
-          createdLink.shortUrl,
+      const [qrResult, analyticsResult] =
+        await Promise.allSettled([
+          createQrCodeDataUrl(
+            createdLink.shortUrl,
+          ),
+          getLinkAnalytics(
+            createdLink.shortCode,
+          ),
+        ])
+
+      if (qrResult.status === 'fulfilled') {
+        setQrCodeDataUrl(qrResult.value)
+      }
+
+      if (
+        analyticsResult.status ===
+        'fulfilled'
+      ) {
+        setAnalytics(analyticsResult.value)
+      } else {
+        setAnalyticsError(
+          analyticsResult.reason instanceof Error
+            ? analyticsResult.reason.message
+            : 'Analytics could not be loaded.',
         )
+      }
 
-        setQrCodeDataUrl(generatedQrCode)
+      const qrSucceeded =
+        qrResult.status === 'fulfilled'
+
+      const analyticsSucceeded =
+        analyticsResult.status ===
+        'fulfilled'
+
+      if (
+        qrSucceeded &&
+        analyticsSucceeded
+      ) {
         setStatusType('success')
         setStatusMessage(
-          'Short link and QR code created successfully.',
+          'Short link, QR code, and analytics created successfully.',
         )
-      } catch {
+      } else if (!qrSucceeded) {
         setStatusType('error')
         setStatusMessage(
           'Short link created, but the QR code could not be generated.',
+        )
+      } else {
+        setStatusType('success')
+        setStatusMessage(
+          'Short link and QR code created. Analytics could not be loaded.',
         )
       }
     } catch (error) {
@@ -137,6 +226,46 @@ function App() {
       )
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  async function handleRefreshAnalytics() {
+    if (
+      !shortLink?.shortCode ||
+      isLoadingAnalytics
+    ) {
+      return
+    }
+
+    setIsLoadingAnalytics(true)
+    setAnalyticsError('')
+    setStatusType('loading')
+    setStatusMessage(
+      'Refreshing link analytics...',
+    )
+
+    try {
+      const refreshedAnalytics =
+        await getLinkAnalytics(
+          shortLink.shortCode,
+        )
+
+      setAnalytics(refreshedAnalytics)
+      setStatusType('success')
+      setStatusMessage(
+        'Analytics refreshed successfully.',
+      )
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Analytics could not be refreshed.'
+
+      setAnalyticsError(message)
+      setStatusType('error')
+      setStatusMessage(message)
+    } finally {
+      setIsLoadingAnalytics(false)
     }
   }
 
@@ -164,13 +293,13 @@ function App() {
     }
   }
 
-  const isReadingTab =
-    statusType === 'loading' && !isSubmitting
-
   return (
     <main className="popup">
       <header className="brand">
-        <div className="brand__mark" aria-hidden="true">
+        <div
+          className="brand__mark"
+          aria-hidden="true"
+        >
           S
         </div>
 
@@ -200,7 +329,9 @@ function App() {
             aria-invalid={
               url.length > 0 && !isValidUrl
             }
-            disabled={isReadingTab || isSubmitting}
+            disabled={
+              isReadingTab || isSubmitting
+            }
             onChange={handleUrlChange}
           />
 
@@ -236,8 +367,13 @@ function App() {
             aria-labelledby="result-heading"
           >
             <div className="result__header">
-              <h3 id="result-heading">Short URL</h3>
-              <span>{shortLink.shortCode}</span>
+              <h3 id="result-heading">
+                Short URL
+              </h3>
+
+              <span>
+                {shortLink.shortCode}
+              </span>
             </div>
 
             <div className="result__field">
@@ -256,6 +392,78 @@ function App() {
                 {copyLabel}
               </button>
             </div>
+
+            <section
+              className="analytics"
+              aria-labelledby="analytics-heading"
+            >
+              <div className="analytics__header">
+                <h3 id="analytics-heading">
+                  Analytics
+                </h3>
+
+                <button
+                  className="button button--secondary"
+                  type="button"
+                  disabled={isLoadingAnalytics}
+                  onClick={
+                    handleRefreshAnalytics
+                  }
+                >
+                  {isLoadingAnalytics
+                    ? 'Refreshing...'
+                    : 'Refresh'}
+                </button>
+              </div>
+
+              {analytics ? (
+                <dl className="analytics__grid">
+                  <div className="analytics__metric analytics__metric--primary">
+                    <dt>Clicks</dt>
+                    <dd>
+                      {analytics.clickCount}
+                    </dd>
+                  </div>
+
+                  <div className="analytics__metric">
+                    <dt>Created</dt>
+                    <dd>
+                      {formatDateTime(
+                        analytics.createdAt,
+                      )}
+                    </dd>
+                  </div>
+
+                  <div className="analytics__metric">
+                    <dt>Last clicked</dt>
+                    <dd>
+                      {formatDateTime(
+                        analytics.lastClickedAt,
+                      )}
+                    </dd>
+                  </div>
+                </dl>
+              ) : (
+                <p
+                  className="analytics__message"
+                  aria-live="polite"
+                >
+                  {isLoadingAnalytics
+                    ? 'Loading analytics...'
+                    : analyticsError ||
+                      'Analytics are unavailable.'}
+                </p>
+              )}
+
+              {analytics && analyticsError && (
+                <p
+                  className="analytics__message analytics__message--error"
+                  role="alert"
+                >
+                  {analyticsError}
+                </p>
+              )}
+            </section>
 
             {qrCodeDataUrl && (
               <div className="qr">
@@ -282,7 +490,7 @@ function App() {
           className="status__dot"
           aria-hidden="true"
         />
-        Short links and QR codes enabled
+        Public shortening and analytics enabled
       </footer>
     </main>
   )
