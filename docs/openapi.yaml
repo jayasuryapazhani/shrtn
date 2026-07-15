@@ -2,15 +2,18 @@ openapi: 3.0.3
 
 info:
   title: Shrtn API
-  version: 0.7.0
+  version: 0.8.0
   description: |
-    REST API for the Shrtn URL-shortening Chrome extension.
+    REST API for the Shrtn browser extension.
 
-    Validates an HTTP or HTTPS URL, generates a unique
-    seven-character short code, and stores the link
-    persistently in PostgreSQL.
+    Shrtn validates HTTP and HTTPS URLs, generates unique
+    seven-character short codes, stores links persistently in
+    PostgreSQL, redirects public short URLs, and exposes click analytics.
 
 servers:
+  - url: https://shrtn.up.railway.app
+    description: Production Railway server
+
   - url: http://localhost:5056
     description: Local development server
 
@@ -19,7 +22,10 @@ tags:
     description: Service availability endpoints
 
   - name: Links
-    description: Short-link creation and management endpoints
+    description: Short-link creation and redirect endpoints
+
+  - name: Analytics
+    description: Short-link click analytics endpoints
 
 paths:
   /health:
@@ -38,48 +44,8 @@ paths:
               example:
                 status: UP
                 service: shrtn-api
-                version: 0.7.0
-                timestamp: "2026-07-13T02:25:00.000Z"
-
-  /api/v1/links/{shortCode}/analytics:
-    get:
-      tags:
-        - Analytics
-      summary: Get analytics for a shortened link
-      operationId: getLinkAnalytics
-      parameters:
-        - name: shortCode
-          in: path
-          required: true
-          description: Seven-character shortened-link code
-          schema:
-            type: string
-            pattern: "^[A-Za-z0-9]{7}$"
-            example: AbC123x
-      responses:
-        "200":
-          description: Link analytics retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    $ref: "#/components/schemas/LinkAnalytics"
-        "404":
-          description: Short link not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Unexpected server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                version: 0.8.0
+                timestamp: "2026-07-15T02:25:00.000Z"
 
   /api/v1/links:
     post:
@@ -88,8 +54,8 @@ paths:
       summary: Create a shortened URL
       description: |
         Validates an HTTP or HTTPS URL, generates a unique
-        seven-character short code, and stores the record temporarily
-        in memory.
+        seven-character short code, and stores the link persistently
+        in PostgreSQL.
       operationId: createShortLink
       requestBody:
         required: true
@@ -117,7 +83,7 @@ paths:
               schema:
                 type: string
                 format: uri
-              example: http://localhost:5056/AbC123x
+              example: https://shrtn.up.railway.app/AbC123x
           content:
             application/json:
               schema:
@@ -126,8 +92,8 @@ paths:
                 data:
                   originalUrl: https://example.com/products?id=123
                   shortCode: AbC123x
-                  shortUrl: http://localhost:5056/AbC123x
-                  createdAt: "2026-07-13T02:25:00.000Z"
+                  shortUrl: https://shrtn.up.railway.app/AbC123x
+                  createdAt: "2026-07-15T02:25:00.000Z"
 
         "400":
           description: Request validation or JSON parsing failed
@@ -136,6 +102,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               examples:
+                requiredUrl:
+                  summary: Missing URL
+                  value:
+                    error:
+                      code: VALIDATION_ERROR
+                      message: Request validation failed.
+                      details:
+                        - field: originalUrl
+                          message: originalUrl is required.
+
                 invalidUrl:
                   summary: Invalid URL
                   value:
@@ -185,6 +161,17 @@ paths:
                   code: REQUEST_TOO_LARGE
                   message: The request body is too large.
 
+        "429":
+          description: The client exceeded the request rate limit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: RATE_LIMIT_EXCEEDED
+                  message: Too many requests. Please try again later.
+
         "500":
           description: Unexpected server failure
           content:
@@ -195,30 +182,91 @@ paths:
                 error:
                   code: INTERNAL_SERVER_ERROR
                   message: An unexpected server error occurred.
+
+  /api/v1/links/{shortCode}/analytics:
+    get:
+      tags:
+        - Analytics
+      summary: Get analytics for a shortened link
+      description: |
+        Returns the stored destination, creation timestamp, total
+        redirect count, and most recent redirect timestamp.
+
+        Reading analytics does not increment the click count.
+      operationId: getLinkAnalytics
+      parameters:
+        - $ref: "#/components/parameters/ShortCode"
+
+      responses:
+        "200":
+          description: Link analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LinkAnalyticsResponse"
+              example:
+                data:
+                  originalUrl: https://example.com/products?id=123
+                  shortCode: AbC123x
+                  createdAt: "2026-07-15T02:25:00.000Z"
+                  clickCount: 3
+                  lastClickedAt: "2026-07-15T03:10:00.000Z"
+
+        "404":
+          description: The short link does not exist or the route format is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                linkNotFound:
+                  summary: Valid code with no stored record
+                  value:
+                    error:
+                      code: LINK_NOT_FOUND
+                      message: The requested short link does not exist.
+
+                invalidCodeFormat:
+                  summary: Invalid short-code format
+                  value:
+                    error:
+                      code: ROUTE_NOT_FOUND
+                      message: Route GET /api/v1/links/not-valid/analytics does not exist.
+
+        "429":
+          description: The client exceeded the request rate limit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: RATE_LIMIT_EXCEEDED
+                  message: Too many requests. Please try again later.
+
+        "500":
+          description: Unexpected server failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: INTERNAL_SERVER_ERROR
+                  message: An unexpected server error occurred.
+
   /{shortCode}:
     get:
       tags:
         - Links
       summary: Redirect a short link
       description: |
-        Finds a stored link using its seven-character short code
-        and redirects the client to the original URL.
-
-        The current implementation uses temporary in-memory storage.
-        Links are lost when the API process restarts.
+        Finds a persistent PostgreSQL link using its seven-character
+        short code, atomically records the redirect analytics, and
+        redirects the client to the original URL.
       operationId: redirectShortLink
-
       parameters:
-        - name: shortCode
-          in: path
-          required: true
-          description: Seven-character alphanumeric Shrtn code
-          schema:
-            type: string
-            minLength: 7
-            maxLength: 7
-            pattern: "^[A-Za-z0-9]{7}$"
-          example: AbC123x
+        - $ref: "#/components/parameters/ShortCode"
 
       responses:
         "302":
@@ -239,18 +287,29 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               examples:
                 linkNotFound:
-                  summary: Valid short-code format with no stored record
+                  summary: Valid code with no stored record
                   value:
                     error:
                       code: LINK_NOT_FOUND
                       message: The requested short link does not exist.
 
                 invalidCodeFormat:
-                  summary: Invalid Shrtn short-code format
+                  summary: Invalid short-code format
                   value:
                     error:
                       code: ROUTE_NOT_FOUND
                       message: Route GET /not-valid does not exist.
+
+        "429":
+          description: The client exceeded the request rate limit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: RATE_LIMIT_EXCEEDED
+                  message: Too many requests. Please try again later.
 
         "500":
           description: Unexpected server failure
@@ -262,7 +321,21 @@ paths:
                 error:
                   code: INTERNAL_SERVER_ERROR
                   message: An unexpected server error occurred.
+
 components:
+  parameters:
+    ShortCode:
+      name: shortCode
+      in: path
+      required: true
+      description: Seven-character alphanumeric Shrtn code
+      schema:
+        type: string
+        minLength: 7
+        maxLength: 7
+        pattern: "^[A-Za-z0-9]{7}$"
+        example: AbC123x
+
   schemas:
     HealthResponse:
       type: object
@@ -287,44 +360,13 @@ components:
 
         version:
           type: string
-          example: 0.7.0
+          example: 0.8.0
 
         timestamp:
           type: string
           format: date-time
-          example: "2026-07-13T02:25:00.000Z"
-    LinkAnalytics:
-      type: object
-      required:
-        - originalUrl
-        - shortCode
-        - createdAt
-        - clickCount
-        - lastClickedAt
-      properties:
-        originalUrl:
-          type: string
-          format: uri
-          example: https://example.com/article
-        shortCode:
-          type: string
-          pattern: "^[A-Za-z0-9]{7}$"
-          example: AbC123x
-        createdAt:
-          type: string
-          format: date-time
-        clickCount:
-          type: integer
-          format: int64
-          minimum: 0
-          example: 3
-        lastClickedAt:
-          type:
-            - string
-            - "null"
-          format: date-time
-          example: "2026-07-15T02:00:00.000Z"
-          
+          example: "2026-07-15T02:25:00.000Z"
+
     CreateLinkRequest:
       type: object
       additionalProperties: false
@@ -336,7 +378,7 @@ components:
           format: uri
           minLength: 1
           maxLength: 4096
-          description: An HTTP or HTTPS URL to shorten
+          description: HTTP or HTTPS URL to shorten
           example: https://example.com/products?id=123
 
     Link:
@@ -363,12 +405,12 @@ components:
         shortUrl:
           type: string
           format: uri
-          example: http://localhost:5056/AbC123x
+          example: https://shrtn.up.railway.app/AbC123x
 
         createdAt:
           type: string
           format: date-time
-          example: "2026-07-13T02:25:00.000Z"
+          example: "2026-07-15T02:25:00.000Z"
 
     LinkResponse:
       type: object
@@ -378,6 +420,54 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/Link"
+
+    LinkAnalytics:
+      type: object
+      additionalProperties: false
+      required:
+        - originalUrl
+        - shortCode
+        - createdAt
+        - clickCount
+        - lastClickedAt
+      properties:
+        originalUrl:
+          type: string
+          format: uri
+          example: https://example.com/products?id=123
+
+        shortCode:
+          type: string
+          minLength: 7
+          maxLength: 7
+          pattern: "^[A-Za-z0-9]{7}$"
+          example: AbC123x
+
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-07-15T02:25:00.000Z"
+
+        clickCount:
+          type: integer
+          format: int64
+          minimum: 0
+          example: 3
+
+        lastClickedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-07-15T03:10:00.000Z"
+
+    LinkAnalyticsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/LinkAnalytics"
 
     ErrorDetail:
       type: object
