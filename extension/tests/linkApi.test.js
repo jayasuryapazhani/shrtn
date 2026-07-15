@@ -19,7 +19,7 @@ describe('createShortLink', () => {
         data: {
           originalUrl: 'https://example.com',
           shortCode: 'AbC123x',
-          shortUrl: 'http://localhost:5056/AbC123x',
+          shortUrl: 'https://shrtn.up.railway.app/AbC123x',
           createdAt: '2026-07-13T12:00:00.000Z',
         },
       }),
@@ -32,11 +32,11 @@ describe('createShortLink', () => {
     )
 
     expect(result.shortUrl).toBe(
-      'http://localhost:5056/AbC123x',
+      'https://shrtn.up.railway.app/AbC123x',
     )
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:5056/api/v1/links',
+      'https://shrtn.up.railway.app/api/v1/links',
       {
         method: 'POST',
         headers: {
@@ -81,7 +81,7 @@ describe('createShortLink', () => {
     await expect(
       createShortLink('https://example.com'),
     ).rejects.toThrow(
-      'Shrtn API is unavailable. Start the backend on port 5056.',
+      'Shrtn API is temporarily unavailable. Please try again.',
     )
   })
 

@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5056'
+const API_BASE_URL = 'https://shrtn.up.railway.app'
 
 function getApiErrorMessage(payload) {
   return (
@@ -22,7 +22,7 @@ export async function createShortLink(originalUrl) {
     })
   } catch {
     throw new Error(
-      'Shrtn API is unavailable. Start the backend on port 5056.',
+      'Shrtn API is temporarily unavailable. Please try again.',
     )
   }
 
