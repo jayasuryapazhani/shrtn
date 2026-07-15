@@ -39,7 +39,7 @@ export function createApp({
     return response.status(200).json({
       status: 'UP',
       service: 'shrtn-api',
-      version: '0.6.0',
+      version: '0.7.0',
       timestamp: new Date().toISOString(),
     })
   })

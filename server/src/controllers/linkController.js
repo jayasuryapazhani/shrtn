@@ -21,6 +21,17 @@ export function createLinkController({ linkService }) {
         })
     },
 
+    async analytics(request, response) {
+  const analytics =
+    await linkService.getLinkAnalytics(
+      request.params.shortCode,
+    )
+
+  return response.status(200).json({
+    data: analytics,
+  })
+},
+
     async redirect(request, response) {
       const link =
         await linkService.getLinkForRedirect(

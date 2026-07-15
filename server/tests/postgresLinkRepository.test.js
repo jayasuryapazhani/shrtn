@@ -173,4 +173,72 @@ it('returns null when recording an unknown code', async () => {
     ),
   ).resolves.toBeNull()
 })
+it('returns analytics for a stored link', async () => {
+  const pool = {
+    query: vi.fn().mockResolvedValue({
+      rowCount: 1,
+      rows: [
+        {
+          original_url:
+            'https://example.com',
+          short_code: 'AbC123x',
+          created_at: new Date(
+            '2026-07-13T03:00:00.000Z',
+          ),
+          click_count: '4',
+          last_clicked_at: new Date(
+            '2026-07-15T02:00:00.000Z',
+          ),
+        },
+      ],
+    }),
+  }
+
+  const repository =
+    createPostgresLinkRepository({
+      pool,
+    })
+
+  await expect(
+    repository.findAnalyticsByCode(
+      'AbC123x',
+    ),
+  ).resolves.toEqual({
+    originalUrl:
+      'https://example.com',
+    shortCode: 'AbC123x',
+    createdAt:
+      '2026-07-13T03:00:00.000Z',
+    clickCount: 4,
+    lastClickedAt:
+      '2026-07-15T02:00:00.000Z',
+  })
+
+  expect(pool.query).toHaveBeenCalledWith(
+    expect.stringContaining(
+      'click_count',
+    ),
+    ['AbC123x'],
+  )
+})
+
+it('returns null when analytics do not exist', async () => {
+  const pool = {
+    query: vi.fn().mockResolvedValue({
+      rowCount: 0,
+      rows: [],
+    }),
+  }
+
+  const repository =
+    createPostgresLinkRepository({
+      pool,
+    })
+
+  await expect(
+    repository.findAnalyticsByCode(
+      'NoLink1',
+    ),
+  ).resolves.toBeNull()
+})
 })
