@@ -4,6 +4,38 @@ Shrtn is a browser extension and REST API for creating persistent short links, g
 
 The extension reads the active browser tab, creates a public short URL, generates a downloadable QR code, and displays click analytics directly inside the popup.
 
+## Screenshots
+
+### Website
+
+<p align="center">
+  <a href="https://shrtn.up.railway.app">
+    <img
+      src="docs/screenshots/home.png"
+      alt="Shrtn website landing page"
+      width="100%"
+    >
+  </a>
+</p>
+
+<p align="center">
+  <img
+    src="docs/screenshots/home-url-shorterned.png"
+    alt="Shrtn website showing a generated short link and analytics"
+    width="100%"
+  >
+</p>
+
+### Browser extension
+
+<p align="center">
+  <img
+    src="docs/screenshots/extension-qr-code.png"
+    alt="Shrtn browser extension showing a short link and click analytics"
+    width="353"
+  >
+</p>
+
 ## Live API
 
 Production API:
@@ -322,8 +354,8 @@ The production PostgreSQL database is hosted on Neon. See [`docs/database.md`](d
 ## Current versions
 
 ```text
-Backend API:       0.8.0
-Browser extension: 0.6.0
+Backend API:       1.0.0
+Browser extension: 1.0.0
 ```
 
 ## Status
