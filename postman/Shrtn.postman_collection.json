@@ -1,11 +1,9 @@
 {
   "info": {
-    "_postman_id": "d8aea77a-a76c-405b-ac4d-891cea134cfe",
+    "_postman_id": "684fdf57-05f8-49df-a02e-8b1bbc2678c1",
     "name": "Shrtn API",
-    "description": "Postman collection for validating the Shrtn URL-shortening API. The current release uses temporary in-memory storage and does not yet implement redirect handling.",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "48883761",
-    "_collection_link": "https://go.postman.co/collection/48883761-d8aea77a-a76c-405b-ac4d-891cea134cfe?source=collection_link"
+    "description": "Postman collection for validating Shrtn API version 0.8.0. It covers health, the complete short-link lifecycle, validation failures, redirect behavior, analytics, PostgreSQL-backed persistence, and security headers. The default baseUrl targets the Railway production service. Change baseUrl to http://localhost:5056 for local testing.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
@@ -17,6 +15,7 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "const responseBody = pm.response.json()",
                   "",
@@ -32,17 +31,24 @@
                   "  pm.expect(responseBody).to.include({",
                   "    status: 'UP',",
                   "    service: 'shrtn-api',",
-                  "    version: '0.3.0'",
+                  "    version: '0.8.0'",
                   "  })",
                   "})",
                   "",
                   "pm.test('Timestamp is a valid ISO date', function () {",
                   "  pm.expect(Number.isNaN(Date.parse(responseBody.timestamp))).to.eql(false)",
+                  "})",
+                  "",
+                  "pm.test('Security headers are present', function () {",
+                  "  pm.expect(pm.response.headers.get('X-Content-Type-Options')).to.eql('nosniff')",
+                  "  pm.expect(pm.response.headers.get('X-Frame-Options')).to.eql('SAMEORIGIN')",
+                  "  pm.expect(pm.response.headers.get('Referrer-Policy')).to.eql('no-referrer')",
+                  "})",
+                  "",
+                  "pm.test('Express technology disclosure is disabled', function () {",
+                  "  pm.expect(pm.response.headers.has('X-Powered-By')).to.eql(false)",
                   "})"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                ]
               }
             }
           ],
@@ -58,17 +64,17 @@
                 "health"
               ]
             },
-            "description": "Confirms that the Shrtn API is running."
+            "description": "Confirms that Shrtn API version 0.8.0 is running and returns defensive HTTP headers."
           },
           "response": []
         }
       ]
     },
     {
-      "name": "Create Short Link",
+      "name": "Short-Link Lifecycle",
       "item": [
         {
-          "name": "Create Valid Short Link",
+          "name": "1. Create Valid Short Link",
           "event": [
             {
               "listen": "test",
@@ -77,19 +83,19 @@
                 "exec": [
                   "const responseBody = pm.response.json()",
                   "const data = responseBody.data",
-                  "const baseUrl = pm.collectionVariables.get('baseUrl')",
+                  "const baseUrl = pm.collectionVariables.get('baseUrl').replace(/\\/$/, '')",
+                  "const originalUrl = pm.collectionVariables.get('originalUrl')",
                   "",
                   "pm.test('Status code is 201', function () {",
                   "  pm.response.to.have.status(201)",
                   "})",
                   "",
-                  "pm.test('Location header is present', function () {",
-                  "  pm.expect(pm.response.headers.has('Location')).to.eql(true)",
+                  "pm.test('Location header matches the short URL', function () {",
                   "  pm.expect(pm.response.headers.get('Location')).to.eql(data.shortUrl)",
                   "})",
                   "",
                   "pm.test('Original URL is returned unchanged', function () {",
-                  "  pm.expect(data.originalUrl).to.eql('https://example.com/products?id=123')",
+                  "  pm.expect(data.originalUrl).to.eql(originalUrl)",
                   "})",
                   "",
                   "pm.test('Short code contains seven alphanumeric characters', function () {",
@@ -121,15 +127,6 @@
                 "type": "text"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"originalUrl\": \"https://example.com/products?id=123\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
               "raw": "{{baseUrl}}/api/v1/links",
               "host": [
@@ -141,10 +138,183 @@
                 "links"
               ]
             },
-            "description": "Creates a short-link record for a valid HTTPS URL."
+            "description": "Creates and persists a short link for the configured originalUrl.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"originalUrl\": \"{{originalUrl}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
+        {
+          "name": "2. Get Initial Analytics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const responseBody = pm.response.json()",
+                  "const data = responseBody.data",
+                  "const shortCode = pm.collectionVariables.get('shortCode')",
+                  "const originalUrl = pm.collectionVariables.get('originalUrl')",
+                  "",
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200)",
+                  "})",
+                  "",
+                  "pm.test('Analytics match the created link', function () {",
+                  "  pm.expect(data.shortCode).to.eql(shortCode)",
+                  "  pm.expect(data.originalUrl).to.eql(originalUrl)",
+                  "})",
+                  "",
+                  "pm.test('A new link has zero recorded clicks', function () {",
+                  "  pm.expect(data.clickCount).to.eql(0)",
+                  "  pm.expect(data.lastClickedAt).to.eql(null)",
+                  "})",
+                  "",
+                  "pm.test('Created timestamp is valid', function () {",
+                  "  pm.expect(Number.isNaN(Date.parse(data.createdAt))).to.eql(false)",
+                  "})",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('initialClickCount', String(data.clickCount))",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/links/{{shortCode}}/analytics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "links",
+                "{{shortCode}}",
+                "analytics"
+              ]
+            },
+            "description": "Confirms that a newly created link starts with zero clicks."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Redirect Created Short Link",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const originalUrl = pm.collectionVariables.get('originalUrl')",
+                  "const shortUrl = pm.collectionVariables.get('shortUrl')",
+                  "",
+                  "pm.test('Status code is 302', function () {",
+                  "  pm.response.to.have.status(302)",
+                  "})",
+                  "",
+                  "pm.test('Location header contains the original URL', function () {",
+                  "  pm.expect(pm.response.headers.get('Location')).to.eql(originalUrl)",
+                  "})",
+                  "",
+                  "pm.test('Short URL variable is valid', function () {",
+                  "  pm.expect(shortUrl).to.be.a('string')",
+                  "  pm.expect(shortUrl).to.match(/^https?:\\/\\/.+\\/[A-Za-z0-9]{7}$/)",
+                  "})",
+                  "",
+                  "pm.test('Redirect does not expose an API JSON error', function () {",
+                  "  const contentType = pm.response.headers.get('Content-Type')",
+                  "  pm.expect(contentType || '').to.not.include('application/json')",
+                  "})"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{shortUrl}}",
+              "host": [
+                "{{shortUrl}}"
+              ]
+            },
+            "description": "Redirects the created short URL without automatically following the destination."
+          },
+          "response": [],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "4. Get Updated Analytics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const responseBody = pm.response.json()",
+                  "const data = responseBody.data",
+                  "const shortCode = pm.collectionVariables.get('shortCode')",
+                  "const initialClickCount = Number(pm.collectionVariables.get('initialClickCount'))",
+                  "",
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200)",
+                  "})",
+                  "",
+                  "pm.test('Analytics belong to the created link', function () {",
+                  "  pm.expect(data.shortCode).to.eql(shortCode)",
+                  "})",
+                  "",
+                  "pm.test('Redirect increments the click count', function () {",
+                  "  pm.expect(data.clickCount).to.be.above(initialClickCount)",
+                  "})",
+                  "",
+                  "pm.test('Last-click timestamp is valid', function () {",
+                  "  pm.expect(data.lastClickedAt).to.be.a('string')",
+                  "  pm.expect(Number.isNaN(Date.parse(data.lastClickedAt))).to.eql(false)",
+                  "})"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/links/{{shortCode}}/analytics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "links",
+                "{{shortCode}}",
+                "analytics"
+              ]
+            },
+            "description": "Confirms that the redirect incremented the click count and updated lastClickedAt."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Request Validation",
+      "item": [
         {
           "name": "Reject Missing Original URL",
           "event": [
@@ -167,7 +337,6 @@
                   "  const hasOriginalUrlError = responseBody.error.details.some(function (detail) {",
                   "    return detail.field === 'originalUrl'",
                   "  })",
-                  "",
                   "  pm.expect(hasOriginalUrlError).to.eql(true)",
                   "})"
                 ]
@@ -183,15 +352,6 @@
                 "type": "text"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
               "raw": "{{baseUrl}}/api/v1/links",
               "host": [
@@ -203,7 +363,16 @@
                 "links"
               ]
             },
-            "description": "Verifies that originalUrl is required."
+            "description": "Verifies that originalUrl is required.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -229,7 +398,6 @@
                   "  const hasExpectedMessage = responseBody.error.details.some(function (detail) {",
                   "    return detail.message === 'originalUrl must be a valid URL.'",
                   "  })",
-                  "",
                   "  pm.expect(hasExpectedMessage).to.eql(true)",
                   "})"
                 ]
@@ -245,15 +413,6 @@
                 "type": "text"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"originalUrl\": \"not a URL\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
               "raw": "{{baseUrl}}/api/v1/links",
               "host": [
@@ -265,7 +424,16 @@
                 "links"
               ]
             },
-            "description": "Verifies malformed URL validation."
+            "description": "Verifies malformed URL validation.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"originalUrl\": \"not a URL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -291,7 +459,6 @@
                   "  const hasExpectedMessage = responseBody.error.details.some(function (detail) {",
                   "    return detail.message === 'Only HTTP and HTTPS URLs are supported.'",
                   "  })",
-                  "",
                   "  pm.expect(hasExpectedMessage).to.eql(true)",
                   "})"
                 ]
@@ -307,15 +474,6 @@
                 "type": "text"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"originalUrl\": \"ftp://example.com/file.zip\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
               "raw": "{{baseUrl}}/api/v1/links",
               "host": [
@@ -327,7 +485,16 @@
                 "links"
               ]
             },
-            "description": "Verifies that only HTTP and HTTPS protocols are accepted."
+            "description": "Verifies that only HTTP and HTTPS protocols are accepted.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"originalUrl\": \"ftp://example.com/file.zip\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -361,15 +528,6 @@
                 "type": "text"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"originalUrl\": \"https://example.com\",\n  \"unsupportedField\": true\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
               "raw": "{{baseUrl}}/api/v1/links",
               "host": [
@@ -381,7 +539,16 @@
                 "links"
               ]
             },
-            "description": "Verifies that the request body rejects unknown properties."
+            "description": "Verifies that the strict request schema rejects unknown properties.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"originalUrl\": \"https://example.com\",\n  \"unsupportedField\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -419,15 +586,6 @@
                 "type": "text"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"originalUrl\":\n",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
               "raw": "{{baseUrl}}/api/v1/links",
               "host": [
@@ -439,100 +597,49 @@
                 "links"
               ]
             },
-            "description": "Verifies the response returned when JSON parsing fails."
+            "description": "Verifies the safe response returned when JSON parsing fails.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"originalUrl\":\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         }
       ]
     },
     {
-      "name": "Redirect Short Link",
+      "name": "Not Found Responses",
       "item": [
         {
-          "name": "Redirect Created Short Link",
+          "name": "Reject Unknown Redirect Code",
           "event": [
             {
               "listen": "test",
               "script": {
-                "exec": [
-                  "pm.test('Status code is 302', function () {\r",
-                  "  pm.response.to.have.status(302)\r",
-                  "})\r",
-                  "\r",
-                  "pm.test('Location header contains the original URL', function () {\r",
-                  "  pm.expect(pm.response.headers.get('Location')).to.eql(\r",
-                  "    'https://example.com/products?id=123',\r",
-                  "  )\r",
-                  "})\r",
-                  "\r",
-                  "pm.test('Short URL variable was created', function () {\r",
-                  "  const shortUrl = pm.collectionVariables.get('shortUrl')\r",
-                  "\r",
-                  "  pm.expect(shortUrl).to.be.a('string')\r",
-                  "  pm.expect(shortUrl).to.match(\r",
-                  "    /^http:\\/\\/localhost:5056\\/[A-Za-z0-9]{7}$/,\r",
-                  "  )\r",
-                  "})\r",
-                  "\r",
-                  "pm.test('Response does not expose API error JSON', function () {\r",
-                  "  pm.expect(pm.response.headers.get('Content-Type')).to.not.include(\r",
-                  "    'application/json',\r",
-                  "  )\r",
-                  "})"
-                ],
                 "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "exec": [
+                  "const responseBody = pm.response.json()",
+                  "",
+                  "pm.test('Status code is 404', function () {",
+                  "  pm.response.to.have.status(404)",
+                  "})",
+                  "",
+                  "pm.test('Error code is LINK_NOT_FOUND', function () {",
+                  "  pm.expect(responseBody.error.code).to.eql('LINK_NOT_FOUND')",
+                  "})",
+                  "",
+                  "pm.test('Error message is correct', function () {",
+                  "  pm.expect(responseBody.error.message).to.eql('The requested short link does not exist.')",
+                  "})"
+                ]
               }
             }
           ],
-          "protocolProfileBehavior": {
-            "followRedirects": false
-          },
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{shortUrl}}",
-              "host": [
-                "{{shortUrl}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Reject Unknown Valid Short Code",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const responseBody = pm.response.json()\r",
-                  "\r",
-                  "pm.test('Status code is 404', function () {\r",
-                  "  pm.response.to.have.status(404)\r",
-                  "})\r",
-                  "\r",
-                  "pm.test('Error code is LINK_NOT_FOUND', function () {\r",
-                  "  pm.expect(responseBody.error.code).to.eql('LINK_NOT_FOUND')\r",
-                  "})\r",
-                  "\r",
-                  "pm.test('Error message explains that the link does not exist', function () {\r",
-                  "  pm.expect(responseBody.error.message).to.eql(\r",
-                  "    'The requested short link does not exist.',\r",
-                  "  )\r",
-                  "})"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "protocolProfileBehavior": {
-            "followRedirects": false
-          },
           "request": {
             "method": "GET",
             "header": [],
@@ -544,42 +651,39 @@
               "path": [
                 "NoLink1"
               ]
-            }
+            },
+            "description": "Verifies the response for a valid seven-character code with no stored link."
           },
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
         },
         {
-          "name": "Reject Invalid Short Code Format",
+          "name": "Reject Invalid Redirect Code Format",
           "event": [
             {
               "listen": "test",
               "script": {
-                "exec": [
-                  "const responseBody = pm.response.json()\r",
-                  "\r",
-                  "pm.test('Status code is 404', function () {\r",
-                  "  pm.response.to.have.status(404)\r",
-                  "})\r",
-                  "\r",
-                  "pm.test('Error code is ROUTE_NOT_FOUND', function () {\r",
-                  "  pm.expect(responseBody.error.code).to.eql('ROUTE_NOT_FOUND')\r",
-                  "})\r",
-                  "\r",
-                  "pm.test('Error identifies the invalid route', function () {\r",
-                  "  pm.expect(responseBody.error.message).to.eql(\r",
-                  "    'Route GET /not-valid does not exist.',\r",
-                  "  )\r",
-                  "})"
-                ],
                 "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "exec": [
+                  "const responseBody = pm.response.json()",
+                  "",
+                  "pm.test('Status code is 404', function () {",
+                  "  pm.response.to.have.status(404)",
+                  "})",
+                  "",
+                  "pm.test('Error code is ROUTE_NOT_FOUND', function () {",
+                  "  pm.expect(responseBody.error.code).to.eql('ROUTE_NOT_FOUND')",
+                  "})",
+                  "",
+                  "pm.test('Error message is correct', function () {",
+                  "  pm.expect(responseBody.error.message).to.eql('Route GET /not-valid does not exist.')",
+                  "})"
+                ]
               }
             }
           ],
-          "protocolProfileBehavior": {
-            "followRedirects": false
-          },
           "request": {
             "method": "GET",
             "header": [],
@@ -591,7 +695,101 @@
               "path": [
                 "not-valid"
               ]
+            },
+            "description": "Verifies that invalid redirect route formats use ROUTE_NOT_FOUND."
+          },
+          "response": [],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "Reject Unknown Analytics Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const responseBody = pm.response.json()",
+                  "",
+                  "pm.test('Status code is 404', function () {",
+                  "  pm.response.to.have.status(404)",
+                  "})",
+                  "",
+                  "pm.test('Error code is LINK_NOT_FOUND', function () {",
+                  "  pm.expect(responseBody.error.code).to.eql('LINK_NOT_FOUND')",
+                  "})",
+                  "",
+                  "pm.test('Error message is correct', function () {",
+                  "  pm.expect(responseBody.error.message).to.eql('The requested short link does not exist.')",
+                  "})"
+                ]
+              }
             }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/links/NoLink1/analytics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "links",
+                "NoLink1",
+                "analytics"
+              ]
+            },
+            "description": "Verifies analytics lookup for a valid code with no stored link."
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Invalid Analytics Code Format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const responseBody = pm.response.json()",
+                  "",
+                  "pm.test('Status code is 404', function () {",
+                  "  pm.response.to.have.status(404)",
+                  "})",
+                  "",
+                  "pm.test('Error code is ROUTE_NOT_FOUND', function () {",
+                  "  pm.expect(responseBody.error.code).to.eql('ROUTE_NOT_FOUND')",
+                  "})",
+                  "",
+                  "pm.test('Error message is correct', function () {",
+                  "  pm.expect(responseBody.error.message).to.eql('Route GET /api/v1/links/not-valid/analytics does not exist.')",
+                  "})"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/links/not-valid/analytics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "links",
+                "not-valid",
+                "analytics"
+              ]
+            },
+            "description": "Verifies that invalid analytics route formats use ROUTE_NOT_FOUND."
           },
           "response": []
         }
@@ -601,15 +799,28 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:5056"
+      "value": "https://shrtn.up.railway.app",
+      "type": "string"
+    },
+    {
+      "key": "originalUrl",
+      "value": "https://example.com/products?id=123",
+      "type": "string"
     },
     {
       "key": "shortCode",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "shortUrl",
-      "value": ""
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "initialClickCount",
+      "value": "0",
+      "type": "string"
     }
   ]
 }
