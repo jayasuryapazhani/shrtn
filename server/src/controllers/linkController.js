@@ -22,9 +22,10 @@ export function createLinkController({ linkService }) {
     },
 
     async redirect(request, response) {
-      const link = await linkService.getLinkByCode(
-        request.params.shortCode,
-      )
+      const link =
+        await linkService.getLinkForRedirect(
+          request.params.shortCode,
+        )
 
       return response.redirect(302, link.originalUrl)
     },
