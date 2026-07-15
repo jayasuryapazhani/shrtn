@@ -38,6 +38,22 @@ export function createInMemoryLinkRepository() {
         : null
     },
 
+    findAnalyticsByCode(shortCode) {
+  const storedLink =
+    linksByCode.get(shortCode)
+
+  if (!storedLink) {
+    return null
+  }
+
+  return {
+    ...mapStoredLink(storedLink),
+    clickCount: storedLink.clickCount,
+    lastClickedAt:
+      storedLink.lastClickedAt,
+  }
+},
+
     recordClick(shortCode, clickedAt) {
       const storedLink =
         linksByCode.get(shortCode)

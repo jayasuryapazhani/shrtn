@@ -90,6 +90,19 @@ export function createLinkService({
       return link
     },
 
+    async getLinkAnalytics(shortCode) {
+  const link =
+    await linkRepository.findAnalyticsByCode(
+      shortCode,
+    )
+
+  if (!link) {
+    throw createLinkNotFoundError()
+  }
+
+  return link
+},
+
     async getLinkForRedirect(shortCode) {
       const clickedAt =
         now().toISOString()

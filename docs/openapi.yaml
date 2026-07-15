@@ -2,14 +2,13 @@ openapi: 3.0.3
 
 info:
   title: Shrtn API
-  version: 0.6.0
+  version: 0.7.0
   description: |
     REST API for the Shrtn URL-shortening Chrome extension.
 
-    The current version can create short links and redirect valid
-    short codes to their original destinations. Storage remains
-    temporary and in memory. PostgreSQL persistence will be added
-    in a later release.
+    Validates an HTTP or HTTPS URL, generates a unique
+    seven-character short code, and stores the link
+    persistently in PostgreSQL.
 
 servers:
   - url: http://localhost:5056
@@ -39,8 +38,48 @@ paths:
               example:
                 status: UP
                 service: shrtn-api
-                version: 0.6.0
+                version: 0.7.0
                 timestamp: "2026-07-13T02:25:00.000Z"
+
+  /api/v1/links/{shortCode}/analytics:
+    get:
+      tags:
+        - Analytics
+      summary: Get analytics for a shortened link
+      operationId: getLinkAnalytics
+      parameters:
+        - name: shortCode
+          in: path
+          required: true
+          description: Seven-character shortened-link code
+          schema:
+            type: string
+            pattern: "^[A-Za-z0-9]{7}$"
+            example: AbC123x
+      responses:
+        "200":
+          description: Link analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: "#/components/schemas/LinkAnalytics"
+        "404":
+          description: Short link not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/links:
     post:
@@ -248,13 +287,44 @@ components:
 
         version:
           type: string
-          example: 0.6.0
+          example: 0.7.0
 
         timestamp:
           type: string
           format: date-time
           example: "2026-07-13T02:25:00.000Z"
-
+    LinkAnalytics:
+      type: object
+      required:
+        - originalUrl
+        - shortCode
+        - createdAt
+        - clickCount
+        - lastClickedAt
+      properties:
+        originalUrl:
+          type: string
+          format: uri
+          example: https://example.com/article
+        shortCode:
+          type: string
+          pattern: "^[A-Za-z0-9]{7}$"
+          example: AbC123x
+        createdAt:
+          type: string
+          format: date-time
+        clickCount:
+          type: integer
+          format: int64
+          minimum: 0
+          example: 3
+        lastClickedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+          example: "2026-07-15T02:00:00.000Z"
+          
     CreateLinkRequest:
       type: object
       additionalProperties: false

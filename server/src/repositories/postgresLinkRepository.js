@@ -82,6 +82,27 @@ export function createPostgresLinkRepository({
 
       return mapLinkRow(result.rows[0])
     },
+    async findAnalyticsByCode(shortCode) {
+  const result = await pool.query(
+    `
+      SELECT
+        original_url,
+        short_code,
+        created_at,
+        click_count,
+        last_clicked_at
+      FROM links
+      WHERE short_code = $1
+    `,
+    [shortCode],
+  )
+
+  if (result.rowCount === 0) {
+    return null
+  }
+
+  return mapAnalyticsRow(result.rows[0])
+},
 
     async recordClick(shortCode, clickedAt) {
       const result = await pool.query(
