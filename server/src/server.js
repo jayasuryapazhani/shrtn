@@ -50,9 +50,14 @@ const linkRepository = createPostgresLinkRepository({
   pool,
 })
 
+const isProduction =
+  process.env.NODE_ENV === 'production'
+
 const app = createApp({
   linkRepository,
   publicBaseUrl,
+  isProduction,
+  trustProxy: isProduction ? 1 : false,
 })
 
 let server
