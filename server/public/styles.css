@@ -306,7 +306,25 @@ summary:focus-visible {
 .header-action {
   min-height: 42px;
 }
+.header-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
 
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.hero-actions .button {
+  min-height: 44px;
+}
 /* Hero */
 
 .hero {
@@ -1033,7 +1051,22 @@ summary:focus-visible {
       minmax(0, 1fr);
     min-height: 70px;
   }
+  .header-actions {
+    justify-self: end;
+  }
 
+  .header-github {
+    display: none;
+  }
+
+  .hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hero-actions .button {
+    width: 100%;
+  }
 
   .hero {
     padding: 38px 0 28px;
