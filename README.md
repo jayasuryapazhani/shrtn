@@ -4,6 +4,12 @@ Shrtn is a browser extension and REST API for creating persistent short links, g
 
 The extension reads the active browser tab, creates a public short URL, generates a downloadable QR code, and displays click analytics directly inside the popup.
 
+## Try Shrtn
+
+[**Install Shrtn from the Chrome Web Store**](https://chromewebstore.google.com/detail/shrtn/adodmibgcbmnhdagfkipjpjfkeaalfim)
+
+[**Open the Shrtn website**](https://shrtn.up.railway.app)
+
 ## Screenshots
 
 ### Website
