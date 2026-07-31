@@ -7,6 +7,9 @@ import {
 import { createQrCodeDataUrl } from './services/qrCodeService'
 import { getActiveTabUrl } from './services/tabService'
 import { isSupportedWebUrl } from './utils/url'
+import {
+  takePendingContextActionResult,
+} from './services/contextActionStorage'
 
 const dateTimeFormatter = new Intl.DateTimeFormat(
   undefined,
@@ -28,6 +31,32 @@ function formatDateTime(value) {
   }
 
   return dateTimeFormatter.format(date)
+}
+
+async function clearActionSignal(
+  chromeApi = globalThis.chrome,
+) {
+  try {
+    if (
+      typeof chromeApi?.action
+        ?.setBadgeText === 'function'
+    ) {
+      await chromeApi.action.setBadgeText({
+        text: '',
+      })
+    }
+
+    if (
+      typeof chromeApi?.action
+        ?.setTitle === 'function'
+    ) {
+      await chromeApi.action.setTitle({
+        title: 'Open Shrtn',
+      })
+    }
+  } catch {
+    // A badge failure should not break the popup.
+  }
 }
 
 function App() {
@@ -61,8 +90,48 @@ function App() {
   useEffect(() => {
     let cancelled = false
 
-    async function loadActiveTab() {
+    async function initializePopup() {
       try {
+        const pendingResult =
+          await takePendingContextActionResult()
+
+        if (cancelled) {
+          return
+        }
+
+        if (pendingResult) {
+          setUrl(
+            pendingResult.originalUrl ?? '',
+          )
+
+          void clearActionSignal()
+
+          if (
+            pendingResult.status ===
+              'success' &&
+            pendingResult.shortLink?.shortUrl
+          ) {
+            setStatusType('loading')
+
+            setStatusMessage(
+              'Loading your right-click result...',
+            )
+
+            setShortLink(
+              pendingResult.shortLink,
+            )
+          } else {
+            setStatusType('error')
+
+            setStatusMessage(
+              pendingResult.message ??
+                'The page could not be shortened.',
+            )
+          }
+
+          return
+        }
+
         const activeUrl =
           await getActiveTabUrl()
 
@@ -74,11 +143,13 @@ function App() {
 
         if (isSupportedWebUrl(activeUrl)) {
           setStatusType('success')
+
           setStatusMessage(
             'Current tab is ready to shorten.',
           )
         } else {
           setStatusType('error')
+
           setStatusMessage(
             'This browser page cannot be shortened.',
           )
@@ -89,6 +160,7 @@ function App() {
         }
 
         setStatusType('error')
+
         setStatusMessage(
           error instanceof Error
             ? error.message
@@ -101,12 +173,104 @@ function App() {
       }
     }
 
-    void loadActiveTab()
+    void initializePopup()
 
     return () => {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+  if (
+    !shortLink?.shortUrl ||
+    !shortLink?.shortCode
+  ) {
+    return undefined
+  }
+
+  let cancelled = false
+
+  async function loadGeneratedContent() {
+    setQrCodeDataUrl('')
+    setAnalytics(null)
+    setAnalyticsError('')
+
+    const [
+      qrResult,
+      analyticsResult,
+    ] = await Promise.allSettled([
+      createQrCodeDataUrl(
+        shortLink.shortUrl,
+      ),
+
+      getLinkAnalytics(
+        shortLink.shortCode,
+      ),
+    ])
+
+    if (cancelled) {
+      return
+    }
+
+    if (
+      qrResult.status === 'fulfilled'
+    ) {
+      setQrCodeDataUrl(qrResult.value)
+    }
+
+    if (
+      analyticsResult.status ===
+      'fulfilled'
+    ) {
+      setAnalytics(
+        analyticsResult.value,
+      )
+    } else {
+      setAnalyticsError(
+        analyticsResult.reason instanceof
+          Error
+          ? analyticsResult.reason.message
+          : 'Analytics could not be loaded.',
+      )
+    }
+
+    const qrSucceeded =
+      qrResult.status === 'fulfilled'
+
+    const analyticsSucceeded =
+      analyticsResult.status ===
+      'fulfilled'
+
+    if (
+      qrSucceeded &&
+      analyticsSucceeded
+    ) {
+      setStatusType('success')
+
+      setStatusMessage(
+        'Short link, QR code, and analytics created successfully.',
+      )
+    } else if (!qrSucceeded) {
+      setStatusType('error')
+
+      setStatusMessage(
+        'Short link created, but the QR code could not be generated.',
+      )
+    } else {
+      setStatusType('success')
+
+      setStatusMessage(
+        'Short link and QR code created. Analytics could not be loaded.',
+      )
+    }
+  }
+
+  void loadGeneratedContent()
+
+  return () => {
+    cancelled = true
+  }
+}, [shortLink])
 
   function resetGeneratedContent() {
     setShortLink(null)
@@ -160,65 +324,20 @@ function App() {
 
     try {
       const createdLink =
-        await createShortLink(url)
+        await createShortLink(
+          url.trim(),
+        )
+
+      setStatusType('loading')
+
+      setStatusMessage(
+        'Short link created. Preparing QR code and analytics...',
+      )
 
       setShortLink(createdLink)
-
-      const [qrResult, analyticsResult] =
-        await Promise.allSettled([
-          createQrCodeDataUrl(
-            createdLink.shortUrl,
-          ),
-          getLinkAnalytics(
-            createdLink.shortCode,
-          ),
-        ])
-
-      if (qrResult.status === 'fulfilled') {
-        setQrCodeDataUrl(qrResult.value)
-      }
-
-      if (
-        analyticsResult.status ===
-        'fulfilled'
-      ) {
-        setAnalytics(analyticsResult.value)
-      } else {
-        setAnalyticsError(
-          analyticsResult.reason instanceof Error
-            ? analyticsResult.reason.message
-            : 'Analytics could not be loaded.',
-        )
-      }
-
-      const qrSucceeded =
-        qrResult.status === 'fulfilled'
-
-      const analyticsSucceeded =
-        analyticsResult.status ===
-        'fulfilled'
-
-      if (
-        qrSucceeded &&
-        analyticsSucceeded
-      ) {
-        setStatusType('success')
-        setStatusMessage(
-          'Short link, QR code, and analytics created successfully.',
-        )
-      } else if (!qrSucceeded) {
-        setStatusType('error')
-        setStatusMessage(
-          'Short link created, but the QR code could not be generated.',
-        )
-      } else {
-        setStatusType('success')
-        setStatusMessage(
-          'Short link and QR code created. Analytics could not be loaded.',
-        )
-      }
     } catch (error) {
       setStatusType('error')
+
       setStatusMessage(
         error instanceof Error
           ? error.message
