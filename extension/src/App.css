@@ -809,6 +809,53 @@ input:focus-visible {
   box-shadow: var(--shadow);
 }
 
+
+/* Shorten another */
+
+.result__next-action {
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top:
+    1px solid var(--line-soft);
+}
+
+.button--shorten-another {
+  width: 100%;
+  min-height: 40px;
+  border:
+    1px dashed
+    rgb(2 102 112 / 48%);
+  background:
+    rgb(223 244 236 / 38%);
+  color: var(--teal);
+  font-size: 10.5px;
+}
+
+.button--shorten-another span {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border:
+    1px solid
+    rgb(2 102 112 / 32%);
+  border-radius: 50%;
+  background:
+    rgb(255 253 248 / 65%);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.button--shorten-another:hover:not(
+  :disabled
+) {
+  border-color: var(--teal);
+  background:
+    rgb(223 244 236 / 65%);
+}
+
+
 /* Recent links */
 
 .recent {
