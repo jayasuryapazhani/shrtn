@@ -29,6 +29,10 @@ import {
 } from './utils/duplicateLink'
 
 import {
+  getExtensionVersion,
+} from './utils/extensionInfo'
+
+import {
   clearRecentGeneratedResults,
   getLastGeneratedResult,
   getRecentGeneratedResults,
@@ -100,6 +104,11 @@ async function clearActionSignal(
 }
 
 function App() {
+
+  const extensionVersion =
+  getExtensionVersion()
+
+
   const [url, setUrl] =
     useState('')
 
@@ -1337,24 +1346,54 @@ async function handleCopy() {
         </section>
       )}
 
-      <footer className="status">
-        <span
-          className="status__dot"
-          aria-hidden="true"
-        />
+        <footer
+          className="status"
+          aria-label="Shrtn extension information"
+        >
+          <div className="status__summary">
+            <span
+              className="status__dot"
+              aria-hidden="true"
+            />
 
-        <span>
-          Live API
-        </span>
+            <span>
+              Version {extensionVersion}
+            </span>
 
-        <span aria-hidden="true">
-          ·
-        </span>
+            <span aria-hidden="true">
+              ·
+            </span>
 
-        <span>
-          QR and analytics enabled
-        </span>
-      </footer>
+            <span>
+              Live API
+            </span>
+          </div>
+
+          <nav
+            className="status__links"
+            aria-label="Shrtn support links"
+          >
+            <a
+              href="https://github.com/jayasuryapazhani/shrtn/issues"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Support
+            </a>
+
+            <span aria-hidden="true">
+              ·
+            </span>
+
+            <a
+              href="https://chromewebstore.google.com/detail/shrtn/adodmibgcbmnhdagfkipjpjfkeaalfim"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Store listing
+            </a>
+          </nav>
+        </footer>
     </main>
   )
 }

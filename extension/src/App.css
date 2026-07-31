@@ -1035,25 +1035,44 @@ input:focus-visible {
 /* Footer */
 
 .status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
   margin-top: 14px;
-  padding-bottom: 2px;
+  padding: 2px 0 3px;
   color: var(--muted);
   font-size: 9.5px;
   font-weight: 600;
 }
 
+.status__summary,
+.status__links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
 .status__dot {
   width: 7px;
   height: 7px;
+  flex: 0 0 7px;
   border-radius: 50%;
   background: var(--success);
   box-shadow:
     0 0 0 4px
     rgb(63 131 103 / 13%);
+}
+
+.status__links a {
+  color: var(--teal);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.status__links a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* Motion */
