@@ -25,7 +25,9 @@ import {
 } from './utils/url'
 
 import {
+  clearRecentGeneratedResults,
   getLastGeneratedResult,
+  getRecentGeneratedResults,
   saveLastGeneratedResult,
   takePendingContextActionResult,
 } from './services/contextActionStorage'
@@ -51,6 +53,18 @@ function formatDateTime(value) {
   }
 
   return dateTimeFormatter.format(date)
+}
+
+function formatResultSource(source) {
+  if (source === 'context-page') {
+    return 'Page menu'
+  }
+
+  if (source === 'context-link') {
+    return 'Link menu'
+  }
+
+  return 'Popup'
 }
 
 async function clearActionSignal(
@@ -80,7 +94,8 @@ async function clearActionSignal(
 }
 
 function App() {
-  const [url, setUrl] = useState('')
+  const [url, setUrl] =
+    useState('')
 
   const [
     shortLink,
@@ -105,6 +120,16 @@ function App() {
   const [
     shouldFocusQr,
     setShouldFocusQr,
+  ] = useState(false)
+
+  const [
+    recentLinks,
+    setRecentLinks,
+  ] = useState([])
+
+  const [
+    isClearingRecentLinks,
+    setIsClearingRecentLinks,
   ] = useState(false)
 
   const [
@@ -152,12 +177,21 @@ function App() {
 
     async function initializePopup() {
       try {
-        const pendingResult =
-          await takePendingContextActionResult()
+        const [
+          pendingResult,
+          storedRecentLinks,
+        ] = await Promise.all([
+          takePendingContextActionResult(),
+          getRecentGeneratedResults(),
+        ])
 
         if (cancelled) {
           return
         }
+
+        setRecentLinks(
+          storedRecentLinks,
+        )
 
         if (pendingResult) {
           setUrl(
@@ -178,7 +212,6 @@ function App() {
               true
 
             setShouldFocusQr(showQr)
-
             setStatusType('loading')
 
             setStatusMessage(
@@ -220,7 +253,6 @@ function App() {
           )
 
           setShouldFocusQr(false)
-
           setStatusType('loading')
 
           setStatusMessage(
@@ -462,7 +494,6 @@ function App() {
 
     setIsSubmitting(true)
     resetGeneratedContent()
-
     setStatusType('loading')
 
     setStatusMessage(
@@ -481,13 +512,28 @@ function App() {
         'Short link created. Preparing QR code and analytics...',
       )
 
-      await saveLastGeneratedResult({
-        originalUrl,
-        source: 'popup',
-        shortLink: createdLink,
-      })
-
       setShortLink(createdLink)
+
+      try {
+        const storedResult =
+          await saveLastGeneratedResult({
+            originalUrl,
+            source: 'popup',
+            shortLink: createdLink,
+          })
+
+        if (storedResult) {
+          const updatedRecentLinks =
+            await getRecentGeneratedResults()
+
+          setRecentLinks(
+            updatedRecentLinks,
+          )
+        }
+      } catch {
+        // Storage failure must not hide
+        // a successfully generated link.
+      }
     } catch (error) {
       setStatusType('error')
 
@@ -511,7 +557,6 @@ function App() {
 
     setIsLoadingAnalytics(true)
     setAnalyticsError('')
-
     setStatusType('loading')
 
     setStatusMessage(
@@ -559,7 +604,6 @@ function App() {
         )
 
       setCopyLabel('Copied')
-
       setStatusType('success')
 
       setStatusMessage(
@@ -567,12 +611,82 @@ function App() {
       )
     } catch {
       setCopyLabel('Copy failed')
-
       setStatusType('error')
 
       setStatusMessage(
         'The short link could not be copied.',
       )
+    }
+  }
+
+  function handleSelectRecentLink(
+    recentResult,
+  ) {
+    const selectedShortLink =
+      recentResult?.shortLink
+
+    if (
+      !selectedShortLink?.shortUrl ||
+      !selectedShortLink?.shortCode
+    ) {
+      return
+    }
+
+    setUrl(
+      recentResult.originalUrl ??
+        selectedShortLink.originalUrl ??
+        '',
+    )
+
+    setAnalytics(null)
+    setAnalyticsError('')
+    setQrCodeDataUrl('')
+    setShouldFocusQr(false)
+    setCopyLabel('Copy')
+    setStatusType('loading')
+
+    setStatusMessage(
+      'Loading the selected recent link...',
+    )
+
+    setShortLink({
+      ...selectedShortLink,
+    })
+  }
+
+  async function handleClearRecentLinks() {
+    if (isClearingRecentLinks) {
+      return
+    }
+
+    setIsClearingRecentLinks(true)
+
+    try {
+      const wasCleared =
+        await clearRecentGeneratedResults()
+
+      if (!wasCleared) {
+        throw new Error(
+          'Recent links storage is unavailable.',
+        )
+      }
+
+      setRecentLinks([])
+      setStatusType('success')
+
+      setStatusMessage(
+        'Recent links cleared successfully.',
+      )
+    } catch (error) {
+      setStatusType('error')
+
+      setStatusMessage(
+        error instanceof Error
+          ? error.message
+          : 'Recent links could not be cleared.',
+      )
+    } finally {
+      setIsClearingRecentLinks(false)
     }
   }
 
@@ -892,13 +1006,136 @@ function App() {
         )}
       </section>
 
+      {recentLinks.length > 0 && (
+        <section
+          className="recent sketch-panel"
+          aria-labelledby="recent-links-heading"
+        >
+          <div className="recent__header">
+            <div>
+              <p className="eyebrow">
+                Local history
+              </p>
+
+              <h2 id="recent-links-heading">
+                Recent links
+              </h2>
+
+              <p className="recent__count">
+                {recentLinks.length}
+                {' '}
+                {recentLinks.length === 1
+                  ? 'saved link'
+                  : 'saved links'}
+              </p>
+            </div>
+
+            <button
+              className="button button--clear-history"
+              type="button"
+              disabled={
+                isClearingRecentLinks
+              }
+              onClick={
+                handleClearRecentLinks
+              }
+            >
+              {isClearingRecentLinks
+                ? 'Clearing...'
+                : 'Clear'}
+            </button>
+          </div>
+
+          <ol className="recent__list">
+            {recentLinks.map(
+              (recentResult) => {
+                const recentShortLink =
+                  recentResult.shortLink
+
+                const originalUrl =
+                  recentResult.originalUrl ??
+                  recentShortLink
+                    .originalUrl ??
+                  'Original URL unavailable'
+
+                return (
+                  <li
+                    className="recent__item"
+                    key={
+                      recentShortLink
+                        .shortUrl
+                    }
+                  >
+                    <button
+                      className="recent__select"
+                      type="button"
+                      title={originalUrl}
+                      onClick={() => {
+                        handleSelectRecentLink(
+                          recentResult,
+                        )
+                      }}
+                    >
+                      <span className="recent__original">
+                        {originalUrl}
+                      </span>
+
+                      <span className="recent__short">
+                        {
+                          recentShortLink
+                            .shortUrl
+                        }
+                      </span>
+
+                      <span className="recent__meta">
+                        {formatResultSource(
+                          recentResult.source,
+                        )}
+
+                        <span
+                          aria-hidden="true"
+                        >
+                          {' · '}
+                        </span>
+
+                        {formatDateTime(
+                          recentResult.savedAt,
+                        )}
+                      </span>
+                    </button>
+
+                    <a
+                      className="recent__open"
+                      href={
+                        recentShortLink
+                          .shortUrl
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={
+                        `Open ${recentShortLink.shortUrl}`
+                      }
+                      title="Open short link"
+                    >
+                      ↗
+                    </a>
+                  </li>
+                )
+              },
+            )}
+          </ol>
+        </section>
+      )}
+
       <footer className="status">
         <span
           className="status__dot"
           aria-hidden="true"
         />
 
-        <span>Live API</span>
+        <span>
+          Live API
+        </span>
 
         <span aria-hidden="true">
           ·
