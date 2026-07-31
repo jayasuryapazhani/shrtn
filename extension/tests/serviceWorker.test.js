@@ -6,6 +6,7 @@ import {
 } from 'vitest'
 
 import {
+  SHORTEN_LINK_MENU_ID,
   SHORTEN_PAGE_MENU_ID,
   createContextMenus,
   handleContextMenuClick,
@@ -15,14 +16,15 @@ import {
 } from '../src/background/serviceWorker'
 
 describe('service worker', () => {
-  it('creates the page-shortening context menu', async () => {
+  it('creates page and link context menus', async () => {
     const removeAll = vi.fn(
       (callback) => callback(),
     )
 
     const create = vi.fn(
-      (_properties, callback) =>
-        callback(),
+      (_properties, callback) => {
+        callback()
+      },
     )
 
     const chromeApi = {
@@ -39,13 +41,35 @@ describe('service worker', () => {
 
     expect(removeAll).toHaveBeenCalledOnce()
 
-    expect(create).toHaveBeenCalledWith(
+    expect(create).toHaveBeenCalledTimes(2)
+
+    expect(create).toHaveBeenNthCalledWith(
+      1,
       {
         id: SHORTEN_PAGE_MENU_ID,
         title:
           'Shorten this page with Shrtn',
         contexts: ['page'],
         documentUrlPatterns: [
+          'http://*/*',
+          'https://*/*',
+        ],
+      },
+      expect.any(Function),
+    )
+
+    expect(create).toHaveBeenNthCalledWith(
+      2,
+      {
+        id: SHORTEN_LINK_MENU_ID,
+        title:
+          'Shorten this link with Shrtn',
+        contexts: ['link'],
+        documentUrlPatterns: [
+          'http://*/*',
+          'https://*/*',
+        ],
+        targetUrlPatterns: [
           'http://*/*',
           'https://*/*',
         ],
@@ -142,7 +166,132 @@ describe('service worker', () => {
         status: 'success',
         originalUrl:
           'https://example.com/article',
+        source: 'context-page',
         shortLink,
+      },
+      chromeApi,
+    )
+
+    expect(showResult).toHaveBeenCalledWith(
+      chromeApi,
+    )
+  })
+
+  it('shortens a selected hyperlink', async () => {
+    const shortLink = {
+      originalUrl:
+        'https://developer.mozilla.org/docs',
+      shortCode: 'DeF456y',
+      shortUrl:
+        'https://shrtn.up.railway.app/DeF456y',
+      createdAt:
+        '2026-07-31T14:00:00.000Z',
+    }
+
+    const createLink =
+      vi.fn().mockResolvedValue(
+        shortLink,
+      )
+
+    const saveResult =
+      vi.fn().mockResolvedValue()
+
+    const showResult =
+      vi.fn().mockResolvedValue(
+        'popup',
+      )
+
+    const chromeApi = {}
+
+    await expect(
+      handleContextMenuClick(
+        {
+          menuItemId:
+            SHORTEN_LINK_MENU_ID,
+          pageUrl:
+            'https://example.com/article',
+          linkUrl:
+            'https://developer.mozilla.org/docs',
+        },
+        {},
+        {
+          chromeApi,
+          createLink,
+          saveResult,
+          showResult,
+        },
+      ),
+    ).resolves.toBe(true)
+
+    expect(createLink).toHaveBeenCalledWith(
+      'https://developer.mozilla.org/docs',
+    )
+
+    expect(
+      createLink,
+    ).not.toHaveBeenCalledWith(
+      'https://example.com/article',
+    )
+
+    expect(saveResult).toHaveBeenCalledWith(
+      {
+        status: 'success',
+        originalUrl:
+          'https://developer.mozilla.org/docs',
+        source: 'context-link',
+        shortLink,
+      },
+      chromeApi,
+    )
+
+    expect(showResult).toHaveBeenCalledWith(
+      chromeApi,
+    )
+  })
+
+  it('rejects an unsupported hyperlink URL', async () => {
+    const createLink = vi.fn()
+
+    const saveResult =
+      vi.fn().mockResolvedValue()
+
+    const showResult =
+      vi.fn().mockResolvedValue(
+        'popup',
+      )
+
+    const chromeApi = {}
+
+    await expect(
+      handleContextMenuClick(
+        {
+          menuItemId:
+            SHORTEN_LINK_MENU_ID,
+          pageUrl:
+            'https://example.com',
+          linkUrl:
+            'mailto:hello@example.com',
+        },
+        {},
+        {
+          chromeApi,
+          createLink,
+          saveResult,
+          showResult,
+        },
+      ),
+    ).resolves.toBe(true)
+
+    expect(createLink).not.toHaveBeenCalled()
+
+    expect(saveResult).toHaveBeenCalledWith(
+      {
+        status: 'error',
+        originalUrl:
+          'mailto:hello@example.com',
+        source: 'context-link',
+        message:
+          'Shrtn can shorten only HTTP and HTTPS URLs.',
       },
       chromeApi,
     )
@@ -168,34 +317,41 @@ describe('service worker', () => {
         'popup',
       )
 
-    await handleContextMenuClick(
-      {
-        menuItemId:
-          SHORTEN_PAGE_MENU_ID,
-        pageUrl:
-          'https://example.com',
-      },
-      {},
-      {
-        chromeApi: {},
-        createLink,
-        saveResult,
-        showResult,
-      },
-    )
+    const chromeApi = {}
+
+    await expect(
+      handleContextMenuClick(
+        {
+          menuItemId:
+            SHORTEN_PAGE_MENU_ID,
+          pageUrl:
+            'https://example.com',
+        },
+        {},
+        {
+          chromeApi,
+          createLink,
+          saveResult,
+          showResult,
+        },
+      ),
+    ).resolves.toBe(true)
 
     expect(saveResult).toHaveBeenCalledWith(
       {
         status: 'error',
         originalUrl:
           'https://example.com',
+        source: 'context-page',
         message:
           'Shrtn API is unavailable.',
       },
-      {},
+      chromeApi,
     )
 
-    expect(showResult).toHaveBeenCalledOnce()
+    expect(showResult).toHaveBeenCalledWith(
+      chromeApi,
+    )
   })
 
   it('ignores other context-menu items', async () => {
@@ -251,7 +407,6 @@ describe('service worker', () => {
                 'Popup could not open.',
               ),
             ),
-
           setBadgeText,
           setBadgeBackgroundColor,
           setTitle,
@@ -259,16 +414,22 @@ describe('service worker', () => {
       }),
     ).resolves.toBe('badge')
 
-    expect(setBadgeText)
-      .toHaveBeenCalledWith({
-        text: '1',
-      })
+    expect(
+      setBadgeText,
+    ).toHaveBeenCalledWith({
+      text: '1',
+    })
 
-    expect(setTitle)
-      .toHaveBeenCalledWith({
-        title:
-          'Shrtn link ready — click to view',
-      })
+    expect(
+      setBadgeBackgroundColor,
+    ).toHaveBeenCalledWith({
+      color: '#026670',
+    })
+
+    expect(setTitle).toHaveBeenCalledWith({
+      title:
+        'Shrtn link ready — click to view',
+    })
   })
 
   it('registers installation and context-menu listeners', () => {
@@ -285,7 +446,6 @@ describe('service worker', () => {
             addInstalledListener,
         },
       },
-
       contextMenus: {
         onClicked: {
           addListener:
