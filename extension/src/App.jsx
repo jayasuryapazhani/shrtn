@@ -168,8 +168,12 @@ function App() {
     'Reading current tab...',
   )
 
+  const urlInputRef =
+    useRef(null)
+
   const qrSectionRef =
     useRef(null)
+
 
   const isValidUrl = useMemo(
     () => isSupportedWebUrl(url),
@@ -674,6 +678,23 @@ function App() {
     }
   }
 
+  function handleShortenAnother() {
+  resetGeneratedContent()
+  setUrl('')
+
+  setStatusType('loading')
+
+  setStatusMessage(
+    'Enter another HTTP or HTTPS URL.',
+  )
+
+  globalThis.requestAnimationFrame?.(
+    () => {
+      urlInputRef.current?.focus()
+    },
+  )
+}
+
   function handleSelectRecentLink(
     recentResult,
   ) {
@@ -814,6 +835,7 @@ function App() {
             </span>
 
             <input
+              ref={urlInputRef}
               id="url"
               name="url"
               type="url"
@@ -1119,6 +1141,19 @@ function App() {
                 </div>
               </section>
             )}
+                            <div className="result__next-action">
+                  <button
+                    className="button button--shorten-another"
+                    type="button"
+                    onClick={handleShortenAnother}
+                  >
+                    <span aria-hidden="true">
+                      +
+                    </span>
+
+                    Shorten another
+                  </button>
+                </div>
           </section>
         )}
       </section>
