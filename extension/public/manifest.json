@@ -16,6 +16,10 @@
   "host_permissions": [
     "https://shrtn.up.railway.app/*"
   ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "action": {
     "default_title": "Open Shrtn",
     "default_popup": "index.html",
