@@ -15,6 +15,7 @@
   --line-soft: rgb(39 51 50 / 18%);
   --success: #3f8367;
   --error: #b34e42;
+  --warning: #936215;
   --shadow:
     2px 3px 0 rgb(39 51 50 / 9%);
 }
@@ -397,9 +398,137 @@ input:focus-visible {
   color: var(--success);
 }
 
+.helper--warning {
+  color: var(--warning);
+}
+
 .helper--error {
   color: var(--error);
 }
+
+
+/* Duplicate warning */
+
+.duplicate-warning {
+  margin-top: 3px;
+  padding: 13px;
+  border:
+    1px solid
+    rgb(147 98 21 / 38%);
+  border-radius:
+    10px 8px 12px 9px;
+  background:
+    rgb(252 225 129 / 24%);
+}
+
+.duplicate-warning__content {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.duplicate-warning__icon {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  align-items: center;
+  justify-content: center;
+  border:
+    1px solid
+    rgb(147 98 21 / 45%);
+  border-radius: 50%;
+  background:
+    rgb(252 225 129 / 55%);
+  color: var(--warning);
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.duplicate-warning__details {
+  min-width: 0;
+}
+
+.duplicate-warning h3 {
+  margin: 0;
+  color: var(--ink-strong);
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+  font-size: 14px;
+}
+
+.duplicate-warning p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.duplicate-warning code {
+  display: block;
+  min-width: 0;
+  margin-top: 6px;
+  overflow: hidden;
+  color: var(--teal);
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.duplicate-warning__actions {
+  display: grid;
+  grid-template-columns:
+    1fr
+    1fr;
+  gap: 7px;
+  margin-top: 11px;
+}
+
+.button--use-existing,
+.button--create-another {
+  min-height: 36px;
+  padding: 0 9px;
+  font-size: 9.5px;
+}
+
+.button--use-existing {
+  border-color: var(--teal-dark);
+  background: var(--teal);
+  color: #fffdf8;
+}
+
+.button--use-existing:hover:not(
+  :disabled
+) {
+  background: var(--teal-dark);
+}
+
+.button--create-another {
+  background:
+    rgb(255 253 248 / 68%);
+  color: var(--warning);
+}
+
+.button--create-another:hover:not(
+  :disabled
+) {
+  border-color: var(--warning);
+  background:
+    rgb(252 225 129 / 32%);
+}
+
 
 /* Loading */
 

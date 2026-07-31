@@ -25,6 +25,10 @@ import {
 } from './utils/url'
 
 import {
+  findDuplicateRecentResult,
+} from './utils/duplicateLink'
+
+import {
   clearRecentGeneratedResults,
   getLastGeneratedResult,
   getRecentGeneratedResults,
@@ -171,6 +175,34 @@ function App() {
     () => isSupportedWebUrl(url),
     [url],
   )
+
+  const duplicateRecentResult = useMemo(
+  () => {
+    const duplicate =
+      findDuplicateRecentResult(
+        url,
+        recentLinks,
+      )
+
+    if (!duplicate) {
+      return null
+    }
+
+    if (
+      shortLink?.shortUrl ===
+      duplicate.shortLink?.shortUrl
+    ) {
+      return null
+    }
+
+    return duplicate
+  },
+  [
+    url,
+    recentLinks,
+    shortLink,
+  ],
+)
 
   useEffect(() => {
     let cancelled = false
@@ -479,13 +511,30 @@ function App() {
     )
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault()
+  async function createLinkFromCurrentUrl(
+    options = {},
+  ) {
+    const {
+      allowDuplicate = false,
+    } = options
 
     if (
       !isValidUrl ||
       isSubmitting
     ) {
+      return
+    }
+
+    if (
+      duplicateRecentResult &&
+      !allowDuplicate
+    ) {
+      setStatusType('warning')
+
+      setStatusMessage(
+        'This URL already has a recent Shrtn link.',
+      )
+
       return
     }
 
@@ -545,6 +594,12 @@ function App() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault()
+
+    void createLinkFromCurrentUrl()
   }
 
   async function handleRefreshAnalytics() {
@@ -779,11 +834,14 @@ function App() {
           <button
             className="button button--primary"
             type="submit"
-            disabled={
-              !isValidUrl ||
-              isSubmitting ||
-              isReadingTab
-            }
+              disabled={
+                !isValidUrl ||
+                isSubmitting ||
+                isReadingTab ||
+                Boolean(
+                  duplicateRecentResult,
+                )
+              }
           >
             {isSubmitting && (
               <span
@@ -815,7 +873,66 @@ function App() {
 
           {statusMessage}
         </p>
+            {duplicateRecentResult &&
+              !isSubmitting && (
+                <section
+                  className="duplicate-warning"
+                  aria-labelledby="duplicate-warning-heading"
+                >
+                  <div className="duplicate-warning__content">
+                    <span
+                      className="duplicate-warning__icon"
+                      aria-hidden="true"
+                    >
+                      !
+                    </span>
 
+                    <div className="duplicate-warning__details">
+                      <h3 id="duplicate-warning-heading">
+                        Already shortened
+                      </h3>
+
+                      <p>
+                        This URL already has a recent
+                        Shrtn link.
+                      </p>
+
+                      <code>
+                        {
+                          duplicateRecentResult
+                            .shortLink.shortUrl
+                        }
+                      </code>
+                    </div>
+                  </div>
+
+                  <div className="duplicate-warning__actions">
+                    <button
+                      className="button button--use-existing"
+                      type="button"
+                      onClick={() => {
+                        handleSelectRecentLink(
+                          duplicateRecentResult,
+                        )
+                      }}
+                    >
+                      Use existing link
+                    </button>
+
+                    <button
+                      className="button button--create-another"
+                      type="button"
+                      onClick={() => {
+                        void createLinkFromCurrentUrl({
+                          allowDuplicate: true,
+                        })
+                      }}
+                    >
+                      Create another
+                    </button>
+                  </div>
+                </section>
+              )}
         {isSubmitting && (
           <section
             className="loading-card sketch-panel"
