@@ -11,7 +11,9 @@
   },
   "permissions": [
     "activeTab",
-    "clipboardWrite"
+    "clipboardWrite",
+    "contextMenus",
+    "storage"
   ],
   "host_permissions": [
     "https://shrtn.up.railway.app/*"
