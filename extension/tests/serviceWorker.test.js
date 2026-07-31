@@ -73,7 +73,8 @@ describe('service worker', () => {
     ).toHaveBeenNthCalledWith(
       2,
       {
-        id: GENERATE_PAGE_QR_MENU_ID,
+        id:
+          GENERATE_PAGE_QR_MENU_ID,
         title:
           'Generate QR for this page with Shrtn',
         contexts: ['page'],
@@ -111,7 +112,8 @@ describe('service worker', () => {
     ).toHaveBeenNthCalledWith(
       4,
       {
-        id: GENERATE_LINK_QR_MENU_ID,
+        id:
+          GENERATE_LINK_QR_MENU_ID,
         title:
           'Generate QR for this link with Shrtn',
         contexts: ['link'],
@@ -165,13 +167,17 @@ describe('service worker', () => {
     ).not.toHaveBeenCalled()
   })
 
-  it('shortens the current page', async () => {
+  it('shortens the current page and stores the result', async () => {
     const shortLink = {
       originalUrl:
         'https://example.com/article',
-      shortCode: 'AbC123x',
+
+      shortCode:
+        'AbC123x',
+
       shortUrl:
         'https://shrtn.up.railway.app/AbC123x',
+
       createdAt:
         '2026-07-31T13:00:00.000Z',
     }
@@ -183,6 +189,9 @@ describe('service worker', () => {
 
     const saveResult =
       vi.fn().mockResolvedValue()
+
+    const saveLastResult =
+      vi.fn().mockResolvedValue(true)
 
     const showResult =
       vi.fn().mockResolvedValue(
@@ -196,6 +205,7 @@ describe('service worker', () => {
         {
           menuItemId:
             SHORTEN_PAGE_MENU_ID,
+
           pageUrl:
             'https://example.com/article',
         },
@@ -204,6 +214,7 @@ describe('service worker', () => {
           chromeApi,
           createLink,
           saveResult,
+          saveLastResult,
           showResult,
         },
       ),
@@ -216,13 +227,32 @@ describe('service worker', () => {
     )
 
     expect(
+      saveLastResult,
+    ).toHaveBeenCalledWith(
+      {
+        originalUrl:
+          'https://example.com/article',
+
+        source:
+          'context-page',
+
+        shortLink,
+      },
+      chromeApi,
+    )
+
+    expect(
       saveResult,
     ).toHaveBeenCalledWith(
       {
         status: 'success',
+
         originalUrl:
           'https://example.com/article',
-        source: 'context-page',
+
+        source:
+          'context-page',
+
         shortLink,
       },
       chromeApi,
@@ -239,9 +269,13 @@ describe('service worker', () => {
     const shortLink = {
       originalUrl:
         'https://example.com/article',
-      shortCode: 'QrP123x',
+
+      shortCode:
+        'QrP123x',
+
       shortUrl:
         'https://shrtn.up.railway.app/QrP123x',
+
       createdAt:
         '2026-07-31T14:30:00.000Z',
     }
@@ -266,6 +300,7 @@ describe('service worker', () => {
         {
           menuItemId:
             GENERATE_PAGE_QR_MENU_ID,
+
           pageUrl:
             'https://example.com/article',
         },
@@ -290,10 +325,15 @@ describe('service worker', () => {
     ).toHaveBeenCalledWith(
       {
         status: 'success',
+
         originalUrl:
           'https://example.com/article',
-        source: 'context-page',
+
+        source:
+          'context-page',
+
         shortLink,
+
         showQr: true,
       },
       chromeApi,
@@ -310,9 +350,13 @@ describe('service worker', () => {
     const shortLink = {
       originalUrl:
         'https://developer.mozilla.org/docs',
-      shortCode: 'DeF456y',
+
+      shortCode:
+        'DeF456y',
+
       shortUrl:
         'https://shrtn.up.railway.app/DeF456y',
+
       createdAt:
         '2026-07-31T14:00:00.000Z',
     }
@@ -337,8 +381,10 @@ describe('service worker', () => {
         {
           menuItemId:
             SHORTEN_LINK_MENU_ID,
+
           pageUrl:
             'https://example.com/article',
+
           linkUrl:
             'https://developer.mozilla.org/docs',
         },
@@ -369,9 +415,13 @@ describe('service worker', () => {
     ).toHaveBeenCalledWith(
       {
         status: 'success',
+
         originalUrl:
           'https://developer.mozilla.org/docs',
-        source: 'context-link',
+
+        source:
+          'context-link',
+
         shortLink,
       },
       chromeApi,
@@ -388,9 +438,13 @@ describe('service worker', () => {
     const shortLink = {
       originalUrl:
         'https://developer.mozilla.org/docs',
-      shortCode: 'QrL456y',
+
+      shortCode:
+        'QrL456y',
+
       shortUrl:
         'https://shrtn.up.railway.app/QrL456y',
+
       createdAt:
         '2026-07-31T14:40:00.000Z',
     }
@@ -415,8 +469,10 @@ describe('service worker', () => {
         {
           menuItemId:
             GENERATE_LINK_QR_MENU_ID,
+
           pageUrl:
             'https://example.com',
+
           linkUrl:
             'https://developer.mozilla.org/docs',
         },
@@ -441,10 +497,15 @@ describe('service worker', () => {
     ).toHaveBeenCalledWith(
       {
         status: 'success',
+
         originalUrl:
           'https://developer.mozilla.org/docs',
-        source: 'context-link',
+
+        source:
+          'context-link',
+
         shortLink,
+
         showQr: true,
       },
       chromeApi,
@@ -475,8 +536,10 @@ describe('service worker', () => {
         {
           menuItemId:
             SHORTEN_LINK_MENU_ID,
+
           pageUrl:
             'https://example.com',
+
           linkUrl:
             'mailto:hello@example.com',
         },
@@ -499,9 +562,13 @@ describe('service worker', () => {
     ).toHaveBeenCalledWith(
       {
         status: 'error',
+
         originalUrl:
           'mailto:hello@example.com',
-        source: 'context-link',
+
+        source:
+          'context-link',
+
         message:
           'Shrtn can shorten only HTTP and HTTPS URLs.',
       },
@@ -526,6 +593,9 @@ describe('service worker', () => {
     const saveResult =
       vi.fn().mockResolvedValue()
 
+    const saveLastResult =
+      vi.fn().mockResolvedValue(true)
+
     const showResult =
       vi.fn().mockResolvedValue(
         'popup',
@@ -538,6 +608,7 @@ describe('service worker', () => {
         {
           menuItemId:
             SHORTEN_PAGE_MENU_ID,
+
           pageUrl:
             'https://example.com',
         },
@@ -546,19 +617,28 @@ describe('service worker', () => {
           chromeApi,
           createLink,
           saveResult,
+          saveLastResult,
           showResult,
         },
       ),
     ).resolves.toBe(true)
 
     expect(
+      saveLastResult,
+    ).not.toHaveBeenCalled()
+
+    expect(
       saveResult,
     ).toHaveBeenCalledWith(
       {
         status: 'error',
+
         originalUrl:
           'https://example.com',
-        source: 'context-page',
+
+        source:
+          'context-page',
+
         message:
           'Shrtn API is unavailable.',
       },

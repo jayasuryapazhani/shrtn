@@ -25,6 +25,8 @@ import {
 } from './utils/url'
 
 import {
+  getLastGeneratedResult,
+  saveLastGeneratedResult,
   takePendingContextActionResult,
 } from './services/contextActionStorage'
 
@@ -80,11 +82,15 @@ async function clearActionSignal(
 function App() {
   const [url, setUrl] = useState('')
 
-  const [shortLink, setShortLink] =
-    useState(null)
+  const [
+    shortLink,
+    setShortLink,
+  ] = useState(null)
 
-  const [analytics, setAnalytics] =
-    useState(null)
+  const [
+    analytics,
+    setAnalytics,
+  ] = useState(null)
 
   const [
     analyticsError,
@@ -101,22 +107,30 @@ function App() {
     setShouldFocusQr,
   ] = useState(false)
 
-  const [isReadingTab, setIsReadingTab] =
-    useState(true)
+  const [
+    isReadingTab,
+    setIsReadingTab,
+  ] = useState(true)
 
-  const [isSubmitting, setIsSubmitting] =
-    useState(false)
+  const [
+    isSubmitting,
+    setIsSubmitting,
+  ] = useState(false)
 
   const [
     isLoadingAnalytics,
     setIsLoadingAnalytics,
   ] = useState(false)
 
-  const [copyLabel, setCopyLabel] =
-    useState('Copy')
+  const [
+    copyLabel,
+    setCopyLabel,
+  ] = useState('Copy')
 
-  const [statusType, setStatusType] =
-    useState('loading')
+  const [
+    statusType,
+    setStatusType,
+  ] = useState('loading')
 
   const [
     statusMessage,
@@ -125,7 +139,8 @@ function App() {
     'Reading current tab...',
   )
 
-  const qrSectionRef = useRef(null)
+  const qrSectionRef =
+    useRef(null)
 
   const isValidUrl = useMemo(
     () => isSupportedWebUrl(url),
@@ -146,7 +161,8 @@ function App() {
 
         if (pendingResult) {
           setUrl(
-            pendingResult.originalUrl ?? '',
+            pendingResult.originalUrl ??
+              '',
           )
 
           void clearActionSignal()
@@ -154,12 +170,15 @@ function App() {
           if (
             pendingResult.status ===
               'success' &&
-            pendingResult.shortLink?.shortUrl
+            pendingResult.shortLink
+              ?.shortUrl
           ) {
             const showQr =
-              pendingResult.showQr === true
+              pendingResult.showQr ===
+              true
 
             setShouldFocusQr(showQr)
+
             setStatusType('loading')
 
             setStatusMessage(
@@ -183,6 +202,39 @@ function App() {
           return
         }
 
+        const lastGeneratedResult =
+          await getLastGeneratedResult()
+
+        if (cancelled) {
+          return
+        }
+
+        if (lastGeneratedResult) {
+          setUrl(
+            lastGeneratedResult
+              .originalUrl ??
+              lastGeneratedResult
+                .shortLink
+                ?.originalUrl ??
+              '',
+          )
+
+          setShouldFocusQr(false)
+
+          setStatusType('loading')
+
+          setStatusMessage(
+            'Restoring your last generated link...',
+          )
+
+          setShortLink(
+            lastGeneratedResult
+              .shortLink,
+          )
+
+          return
+        }
+
         const activeUrl =
           await getActiveTabUrl()
 
@@ -192,7 +244,9 @@ function App() {
 
         setUrl(activeUrl)
 
-        if (isSupportedWebUrl(activeUrl)) {
+        if (
+          isSupportedWebUrl(activeUrl)
+        ) {
           setStatusType('success')
 
           setStatusMessage(
@@ -264,7 +318,8 @@ function App() {
       }
 
       if (
-        qrResult.status === 'fulfilled'
+        qrResult.status ===
+        'fulfilled'
       ) {
         setQrCodeDataUrl(
           qrResult.value,
@@ -289,7 +344,8 @@ function App() {
       }
 
       const qrSucceeded =
-        qrResult.status === 'fulfilled'
+        qrResult.status ===
+        'fulfilled'
 
       const analyticsSucceeded =
         analyticsResult.status ===
@@ -334,10 +390,11 @@ function App() {
       return
     }
 
-    qrSectionRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-    })
+    qrSectionRef.current
+      ?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
 
     setShouldFocusQr(false)
   }, [
@@ -355,7 +412,8 @@ function App() {
   }
 
   function handleUrlChange(event) {
-    const nextUrl = event.target.value
+    const nextUrl =
+      event.target.value
 
     setUrl(nextUrl)
     resetGeneratedContent()
@@ -370,7 +428,9 @@ function App() {
       return
     }
 
-    if (isSupportedWebUrl(nextUrl)) {
+    if (
+      isSupportedWebUrl(nextUrl)
+    ) {
       setStatusType('success')
 
       setStatusMessage(
@@ -397,8 +457,12 @@ function App() {
       return
     }
 
+    const originalUrl =
+      url.trim()
+
     setIsSubmitting(true)
     resetGeneratedContent()
+
     setStatusType('loading')
 
     setStatusMessage(
@@ -408,7 +472,7 @@ function App() {
     try {
       const createdLink =
         await createShortLink(
-          url.trim(),
+          originalUrl,
         )
 
       setStatusType('loading')
@@ -416,6 +480,12 @@ function App() {
       setStatusMessage(
         'Short link created. Preparing QR code and analytics...',
       )
+
+      await saveLastGeneratedResult({
+        originalUrl,
+        source: 'popup',
+        shortLink: createdLink,
+      })
 
       setShortLink(createdLink)
     } catch (error) {
@@ -441,6 +511,7 @@ function App() {
 
     setIsLoadingAnalytics(true)
     setAnalyticsError('')
+
     setStatusType('loading')
 
     setStatusMessage(
@@ -482,11 +553,13 @@ function App() {
     }
 
     try {
-      await navigator.clipboard.writeText(
-        shortLink.shortUrl,
-      )
+      await navigator.clipboard
+        .writeText(
+          shortLink.shortUrl,
+        )
 
       setCopyLabel('Copied')
+
       setStatusType('success')
 
       setStatusMessage(
@@ -494,6 +567,7 @@ function App() {
       )
     } catch {
       setCopyLabel('Copy failed')
+
       setStatusType('error')
 
       setStatusMessage(
@@ -719,25 +793,23 @@ function App() {
               {analytics ? (
                 <dl className="analytics__grid">
                   <div className="analytics__metric analytics__metric--primary">
-                    <dt>
-                      Clicks
-                    </dt>
+                    <dt>Clicks</dt>
 
                     <dd>
                       {
-                        analytics.clickCount
+                        analytics
+                          .clickCount
                       }
                     </dd>
                   </div>
 
                   <div className="analytics__metric">
-                    <dt>
-                      Created
-                    </dt>
+                    <dt>Created</dt>
 
                     <dd>
                       {formatDateTime(
-                        analytics.createdAt,
+                        analytics
+                          .createdAt,
                       )}
                     </dd>
                   </div>
@@ -826,9 +898,7 @@ function App() {
           aria-hidden="true"
         />
 
-        <span>
-          Live API
-        </span>
+        <span>Live API</span>
 
         <span aria-hidden="true">
           ·
