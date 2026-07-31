@@ -6,6 +6,8 @@ import {
 } from 'vitest'
 
 import {
+  GENERATE_LINK_QR_MENU_ID,
+  GENERATE_PAGE_QR_MENU_ID,
   SHORTEN_LINK_MENU_ID,
   SHORTEN_PAGE_MENU_ID,
   createContextMenus,
@@ -16,9 +18,11 @@ import {
 } from '../src/background/serviceWorker'
 
 describe('service worker', () => {
-  it('creates page and link context menus', async () => {
+  it('creates page, link, and QR context menus', async () => {
     const removeAll = vi.fn(
-      (callback) => callback(),
+      (callback) => {
+        callback()
+      },
     )
 
     const create = vi.fn(
@@ -39,11 +43,17 @@ describe('service worker', () => {
       createContextMenus(chromeApi),
     ).resolves.toBe(true)
 
-    expect(removeAll).toHaveBeenCalledOnce()
+    expect(
+      removeAll,
+    ).toHaveBeenCalledOnce()
 
-    expect(create).toHaveBeenCalledTimes(2)
+    expect(
+      create,
+    ).toHaveBeenCalledTimes(4)
 
-    expect(create).toHaveBeenNthCalledWith(
+    expect(
+      create,
+    ).toHaveBeenNthCalledWith(
       1,
       {
         id: SHORTEN_PAGE_MENU_ID,
@@ -58,12 +68,52 @@ describe('service worker', () => {
       expect.any(Function),
     )
 
-    expect(create).toHaveBeenNthCalledWith(
+    expect(
+      create,
+    ).toHaveBeenNthCalledWith(
       2,
+      {
+        id: GENERATE_PAGE_QR_MENU_ID,
+        title:
+          'Generate QR for this page with Shrtn',
+        contexts: ['page'],
+        documentUrlPatterns: [
+          'http://*/*',
+          'https://*/*',
+        ],
+      },
+      expect.any(Function),
+    )
+
+    expect(
+      create,
+    ).toHaveBeenNthCalledWith(
+      3,
       {
         id: SHORTEN_LINK_MENU_ID,
         title:
           'Shorten this link with Shrtn',
+        contexts: ['link'],
+        documentUrlPatterns: [
+          'http://*/*',
+          'https://*/*',
+        ],
+        targetUrlPatterns: [
+          'http://*/*',
+          'https://*/*',
+        ],
+      },
+      expect.any(Function),
+    )
+
+    expect(
+      create,
+    ).toHaveBeenNthCalledWith(
+      4,
+      {
+        id: GENERATE_LINK_QR_MENU_ID,
+        title:
+          'Generate QR for this link with Shrtn',
         contexts: ['link'],
         documentUrlPatterns: [
           'http://*/*',
@@ -92,9 +142,9 @@ describe('service worker', () => {
       ),
     ).resolves.toBe(true)
 
-    expect(createMenus).toHaveBeenCalledWith(
-      {},
-    )
+    expect(
+      createMenus,
+    ).toHaveBeenCalledWith({})
   })
 
   it('ignores unrelated installation events', async () => {
@@ -110,7 +160,9 @@ describe('service worker', () => {
       ),
     ).resolves.toBe(false)
 
-    expect(createMenus).not.toHaveBeenCalled()
+    expect(
+      createMenus,
+    ).not.toHaveBeenCalled()
   })
 
   it('shortens the current page', async () => {
@@ -157,11 +209,15 @@ describe('service worker', () => {
       ),
     ).resolves.toBe(true)
 
-    expect(createLink).toHaveBeenCalledWith(
+    expect(
+      createLink,
+    ).toHaveBeenCalledWith(
       'https://example.com/article',
     )
 
-    expect(saveResult).toHaveBeenCalledWith(
+    expect(
+      saveResult,
+    ).toHaveBeenCalledWith(
       {
         status: 'success',
         originalUrl:
@@ -172,7 +228,80 @@ describe('service worker', () => {
       chromeApi,
     )
 
-    expect(showResult).toHaveBeenCalledWith(
+    expect(
+      showResult,
+    ).toHaveBeenCalledWith(
+      chromeApi,
+    )
+  })
+
+  it('generates a QR result for the current page', async () => {
+    const shortLink = {
+      originalUrl:
+        'https://example.com/article',
+      shortCode: 'QrP123x',
+      shortUrl:
+        'https://shrtn.up.railway.app/QrP123x',
+      createdAt:
+        '2026-07-31T14:30:00.000Z',
+    }
+
+    const createLink =
+      vi.fn().mockResolvedValue(
+        shortLink,
+      )
+
+    const saveResult =
+      vi.fn().mockResolvedValue()
+
+    const showResult =
+      vi.fn().mockResolvedValue(
+        'popup',
+      )
+
+    const chromeApi = {}
+
+    await expect(
+      handleContextMenuClick(
+        {
+          menuItemId:
+            GENERATE_PAGE_QR_MENU_ID,
+          pageUrl:
+            'https://example.com/article',
+        },
+        {},
+        {
+          chromeApi,
+          createLink,
+          saveResult,
+          showResult,
+        },
+      ),
+    ).resolves.toBe(true)
+
+    expect(
+      createLink,
+    ).toHaveBeenCalledWith(
+      'https://example.com/article',
+    )
+
+    expect(
+      saveResult,
+    ).toHaveBeenCalledWith(
+      {
+        status: 'success',
+        originalUrl:
+          'https://example.com/article',
+        source: 'context-page',
+        shortLink,
+        showQr: true,
+      },
+      chromeApi,
+    )
+
+    expect(
+      showResult,
+    ).toHaveBeenCalledWith(
       chromeApi,
     )
   })
@@ -223,7 +352,9 @@ describe('service worker', () => {
       ),
     ).resolves.toBe(true)
 
-    expect(createLink).toHaveBeenCalledWith(
+    expect(
+      createLink,
+    ).toHaveBeenCalledWith(
       'https://developer.mozilla.org/docs',
     )
 
@@ -233,7 +364,9 @@ describe('service worker', () => {
       'https://example.com/article',
     )
 
-    expect(saveResult).toHaveBeenCalledWith(
+    expect(
+      saveResult,
+    ).toHaveBeenCalledWith(
       {
         status: 'success',
         originalUrl:
@@ -244,7 +377,82 @@ describe('service worker', () => {
       chromeApi,
     )
 
-    expect(showResult).toHaveBeenCalledWith(
+    expect(
+      showResult,
+    ).toHaveBeenCalledWith(
+      chromeApi,
+    )
+  })
+
+  it('generates a QR result for a selected hyperlink', async () => {
+    const shortLink = {
+      originalUrl:
+        'https://developer.mozilla.org/docs',
+      shortCode: 'QrL456y',
+      shortUrl:
+        'https://shrtn.up.railway.app/QrL456y',
+      createdAt:
+        '2026-07-31T14:40:00.000Z',
+    }
+
+    const createLink =
+      vi.fn().mockResolvedValue(
+        shortLink,
+      )
+
+    const saveResult =
+      vi.fn().mockResolvedValue()
+
+    const showResult =
+      vi.fn().mockResolvedValue(
+        'popup',
+      )
+
+    const chromeApi = {}
+
+    await expect(
+      handleContextMenuClick(
+        {
+          menuItemId:
+            GENERATE_LINK_QR_MENU_ID,
+          pageUrl:
+            'https://example.com',
+          linkUrl:
+            'https://developer.mozilla.org/docs',
+        },
+        {},
+        {
+          chromeApi,
+          createLink,
+          saveResult,
+          showResult,
+        },
+      ),
+    ).resolves.toBe(true)
+
+    expect(
+      createLink,
+    ).toHaveBeenCalledWith(
+      'https://developer.mozilla.org/docs',
+    )
+
+    expect(
+      saveResult,
+    ).toHaveBeenCalledWith(
+      {
+        status: 'success',
+        originalUrl:
+          'https://developer.mozilla.org/docs',
+        source: 'context-link',
+        shortLink,
+        showQr: true,
+      },
+      chromeApi,
+    )
+
+    expect(
+      showResult,
+    ).toHaveBeenCalledWith(
       chromeApi,
     )
   })
@@ -282,9 +490,13 @@ describe('service worker', () => {
       ),
     ).resolves.toBe(true)
 
-    expect(createLink).not.toHaveBeenCalled()
+    expect(
+      createLink,
+    ).not.toHaveBeenCalled()
 
-    expect(saveResult).toHaveBeenCalledWith(
+    expect(
+      saveResult,
+    ).toHaveBeenCalledWith(
       {
         status: 'error',
         originalUrl:
@@ -296,7 +508,9 @@ describe('service worker', () => {
       chromeApi,
     )
 
-    expect(showResult).toHaveBeenCalledWith(
+    expect(
+      showResult,
+    ).toHaveBeenCalledWith(
       chromeApi,
     )
   })
@@ -337,7 +551,9 @@ describe('service worker', () => {
       ),
     ).resolves.toBe(true)
 
-    expect(saveResult).toHaveBeenCalledWith(
+    expect(
+      saveResult,
+    ).toHaveBeenCalledWith(
       {
         status: 'error',
         originalUrl:
@@ -349,7 +565,9 @@ describe('service worker', () => {
       chromeApi,
     )
 
-    expect(showResult).toHaveBeenCalledWith(
+    expect(
+      showResult,
+    ).toHaveBeenCalledWith(
       chromeApi,
     )
   })
@@ -370,7 +588,9 @@ describe('service worker', () => {
       ),
     ).resolves.toBe(false)
 
-    expect(createLink).not.toHaveBeenCalled()
+    expect(
+      createLink,
+    ).not.toHaveBeenCalled()
   })
 
   it('opens the extension popup', async () => {
@@ -385,7 +605,9 @@ describe('service worker', () => {
       }),
     ).resolves.toBe('popup')
 
-    expect(openPopup).toHaveBeenCalledOnce()
+    expect(
+      openPopup,
+    ).toHaveBeenCalledOnce()
   })
 
   it('uses a toolbar badge when popup opening fails', async () => {
@@ -407,6 +629,7 @@ describe('service worker', () => {
                 'Popup could not open.',
               ),
             ),
+
           setBadgeText,
           setBadgeBackgroundColor,
           setTitle,
@@ -426,7 +649,9 @@ describe('service worker', () => {
       color: '#026670',
     })
 
-    expect(setTitle).toHaveBeenCalledWith({
+    expect(
+      setTitle,
+    ).toHaveBeenCalledWith({
       title:
         'Shrtn link ready — click to view',
     })
@@ -446,6 +671,7 @@ describe('service worker', () => {
             addInstalledListener,
         },
       },
+
       contextMenus: {
         onClicked: {
           addListener:

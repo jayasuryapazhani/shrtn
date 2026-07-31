@@ -14,7 +14,13 @@ export const SHORTEN_PAGE_MENU_ID =
   'shrtn-shorten-current-page'
 
 export const SHORTEN_LINK_MENU_ID =
- 'shrtn-shorten-selected-link'
+  'shrtn-shorten-selected-link'
+
+export const GENERATE_PAGE_QR_MENU_ID =
+  'shrtn-generate-current-page-qr'
+
+export const GENERATE_LINK_QR_MENU_ID =
+  'shrtn-generate-selected-link-qr'
 
 const SUPPORTED_PAGE_PATTERNS = [
   'http://*/*',
@@ -24,7 +30,7 @@ const SUPPORTED_PAGE_PATTERNS = [
 function getErrorMessage(error) {
   return error instanceof Error
     ? error.message
-    : 'The page could not be shortened.'
+    : 'The URL could not be shortened.'
 }
 
 function removeAllContextMenus(chromeApi) {
@@ -85,25 +91,45 @@ export async function createContextMenus(
 
   await removeAllContextMenus(chromeApi)
 
-    await createContextMenu(chromeApi, {
+  await createContextMenu(chromeApi, {
     id: SHORTEN_PAGE_MENU_ID,
     title: 'Shorten this page with Shrtn',
     contexts: ['page'],
     documentUrlPatterns:
-        SUPPORTED_PAGE_PATTERNS,
-    })
+      SUPPORTED_PAGE_PATTERNS,
+  })
 
-    await createContextMenu(chromeApi, {
+  await createContextMenu(chromeApi, {
+    id: GENERATE_PAGE_QR_MENU_ID,
+    title:
+      'Generate QR for this page with Shrtn',
+    contexts: ['page'],
+    documentUrlPatterns:
+      SUPPORTED_PAGE_PATTERNS,
+  })
+
+  await createContextMenu(chromeApi, {
     id: SHORTEN_LINK_MENU_ID,
     title: 'Shorten this link with Shrtn',
     contexts: ['link'],
     documentUrlPatterns:
-        SUPPORTED_PAGE_PATTERNS,
+      SUPPORTED_PAGE_PATTERNS,
     targetUrlPatterns:
-        SUPPORTED_PAGE_PATTERNS,
-    })
+      SUPPORTED_PAGE_PATTERNS,
+  })
 
-    return true
+  await createContextMenu(chromeApi, {
+    id: GENERATE_LINK_QR_MENU_ID,
+    title:
+      'Generate QR for this link with Shrtn',
+    contexts: ['link'],
+    documentUrlPatterns:
+      SUPPORTED_PAGE_PATTERNS,
+    targetUrlPatterns:
+      SUPPORTED_PAGE_PATTERNS,
+  })
+
+  return true
 }
 
 export async function openResultPopup(
@@ -192,23 +218,36 @@ export async function handleContextMenuClick(
     showResult = openResultPopup,
   } = dependencies
 
-    const isPageAction =
-    info?.menuItemId ===
-    SHORTEN_PAGE_MENU_ID
+  const menuItemId =
+    info?.menuItemId
 
-    const isLinkAction =
-    info?.menuItemId ===
-    SHORTEN_LINK_MENU_ID
+  const isPageAction =
+    menuItemId ===
+      SHORTEN_PAGE_MENU_ID ||
+    menuItemId ===
+      GENERATE_PAGE_QR_MENU_ID
 
-    if (!isPageAction && !isLinkAction) {
+  const isLinkAction =
+    menuItemId ===
+      SHORTEN_LINK_MENU_ID ||
+    menuItemId ===
+      GENERATE_LINK_QR_MENU_ID
+
+  const shouldShowQr =
+    menuItemId ===
+      GENERATE_PAGE_QR_MENU_ID ||
+    menuItemId ===
+      GENERATE_LINK_QR_MENU_ID
+
+  if (!isPageAction && !isLinkAction) {
     return false
-    }
+  }
 
-    const originalUrl = isLinkAction
+  const originalUrl = isLinkAction
     ? info?.linkUrl ?? ''
     : info?.pageUrl ?? tab?.url ?? ''
 
-    const source = isLinkAction
+  const source = isLinkAction
     ? 'context-link'
     : 'context-page'
 
@@ -216,30 +255,35 @@ export async function handleContextMenuClick(
 
   if (!isSupportedWebUrl(originalUrl)) {
     pendingResult = {
-        status: 'error',
-        originalUrl,
-        source,
-        message:
-            'Shrtn can shorten only HTTP and HTTPS URLs.',
+      status: 'error',
+      originalUrl,
+      source,
+      message:
+        'Shrtn can shorten only HTTP and HTTPS URLs.',
     }
   } else {
     try {
       const shortLink =
         await createLink(originalUrl)
 
-        pendingResult = {
-            status: 'success',
-            originalUrl,
-            source,
-            shortLink,
-        }
+      pendingResult = {
+        status: 'success',
+        originalUrl,
+        source,
+        shortLink,
+        ...(shouldShowQr
+          ? {
+              showQr: true,
+            }
+          : {}),
+      }
     } catch (error) {
-        pendingResult = {
+      pendingResult = {
         status: 'error',
         originalUrl,
         source,
         message: getErrorMessage(error),
-        }
+      }
     }
   }
 
