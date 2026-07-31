@@ -13,6 +13,9 @@ import {
 export const SHORTEN_PAGE_MENU_ID =
   'shrtn-shorten-current-page'
 
+export const SHORTEN_LINK_MENU_ID =
+ 'shrtn-shorten-selected-link'
+
 const SUPPORTED_PAGE_PATTERNS = [
   'http://*/*',
   'https://*/*',
@@ -82,15 +85,25 @@ export async function createContextMenus(
 
   await removeAllContextMenus(chromeApi)
 
-  await createContextMenu(chromeApi, {
+    await createContextMenu(chromeApi, {
     id: SHORTEN_PAGE_MENU_ID,
     title: 'Shorten this page with Shrtn',
     contexts: ['page'],
     documentUrlPatterns:
-      SUPPORTED_PAGE_PATTERNS,
-  })
+        SUPPORTED_PAGE_PATTERNS,
+    })
 
-  return true
+    await createContextMenu(chromeApi, {
+    id: SHORTEN_LINK_MENU_ID,
+    title: 'Shorten this link with Shrtn',
+    contexts: ['link'],
+    documentUrlPatterns:
+        SUPPORTED_PAGE_PATTERNS,
+    targetUrlPatterns:
+        SUPPORTED_PAGE_PATTERNS,
+    })
+
+    return true
 }
 
 export async function openResultPopup(
@@ -179,41 +192,54 @@ export async function handleContextMenuClick(
     showResult = openResultPopup,
   } = dependencies
 
-  if (
-    info?.menuItemId !==
+    const isPageAction =
+    info?.menuItemId ===
     SHORTEN_PAGE_MENU_ID
-  ) {
-    return false
-  }
 
-  const originalUrl =
-    info?.pageUrl ?? tab?.url ?? ''
+    const isLinkAction =
+    info?.menuItemId ===
+    SHORTEN_LINK_MENU_ID
+
+    if (!isPageAction && !isLinkAction) {
+    return false
+    }
+
+    const originalUrl = isLinkAction
+    ? info?.linkUrl ?? ''
+    : info?.pageUrl ?? tab?.url ?? ''
+
+    const source = isLinkAction
+    ? 'context-link'
+    : 'context-page'
 
   let pendingResult
 
   if (!isSupportedWebUrl(originalUrl)) {
     pendingResult = {
-      status: 'error',
-      originalUrl,
-      message:
-        'Shrtn can shorten only HTTP and HTTPS webpages.',
+        status: 'error',
+        originalUrl,
+        source,
+        message:
+            'Shrtn can shorten only HTTP and HTTPS URLs.',
     }
   } else {
     try {
       const shortLink =
         await createLink(originalUrl)
 
-      pendingResult = {
-        status: 'success',
-        originalUrl,
-        shortLink,
-      }
+        pendingResult = {
+            status: 'success',
+            originalUrl,
+            source,
+            shortLink,
+        }
     } catch (error) {
-      pendingResult = {
+        pendingResult = {
         status: 'error',
         originalUrl,
+        source,
         message: getErrorMessage(error),
-      }
+        }
     }
   }
 
