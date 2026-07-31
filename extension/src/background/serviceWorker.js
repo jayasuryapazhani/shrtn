@@ -3,6 +3,7 @@ import {
 } from '../services/linkApi'
 
 import {
+  saveLastGeneratedResult,
   savePendingContextActionResult,
 } from '../services/contextActionStorage'
 
@@ -93,7 +94,8 @@ export async function createContextMenus(
 
   await createContextMenu(chromeApi, {
     id: SHORTEN_PAGE_MENU_ID,
-    title: 'Shorten this page with Shrtn',
+    title:
+      'Shorten this page with Shrtn',
     contexts: ['page'],
     documentUrlPatterns:
       SUPPORTED_PAGE_PATTERNS,
@@ -110,7 +112,8 @@ export async function createContextMenus(
 
   await createContextMenu(chromeApi, {
     id: SHORTEN_LINK_MENU_ID,
-    title: 'Shorten this link with Shrtn',
+    title:
+      'Shorten this link with Shrtn',
     contexts: ['link'],
     documentUrlPatterns:
       SUPPORTED_PAGE_PATTERNS,
@@ -144,7 +147,7 @@ export async function openResultPopup(
 
       return 'popup'
     } catch {
-      // Use the toolbar badge fallback below.
+      // Use the toolbar badge fallback.
     }
   }
 
@@ -212,10 +215,18 @@ export async function handleContextMenuClick(
 ) {
   const {
     chromeApi = globalThis.chrome,
-    createLink = createShortLink,
+
+    createLink =
+      createShortLink,
+
     saveResult =
       savePendingContextActionResult,
-    showResult = openResultPopup,
+
+    saveLastResult =
+      saveLastGeneratedResult,
+
+    showResult =
+      openResultPopup,
   } = dependencies
 
   const menuItemId =
@@ -239,13 +250,18 @@ export async function handleContextMenuClick(
     menuItemId ===
       GENERATE_LINK_QR_MENU_ID
 
-  if (!isPageAction && !isLinkAction) {
+  if (
+    !isPageAction &&
+    !isLinkAction
+  ) {
     return false
   }
 
   const originalUrl = isLinkAction
     ? info?.linkUrl ?? ''
-    : info?.pageUrl ?? tab?.url ?? ''
+    : info?.pageUrl ??
+      tab?.url ??
+      ''
 
   const source = isLinkAction
     ? 'context-link'
@@ -271,6 +287,7 @@ export async function handleContextMenuClick(
         originalUrl,
         source,
         shortLink,
+
         ...(shouldShowQr
           ? {
               showQr: true,
@@ -282,9 +299,29 @@ export async function handleContextMenuClick(
         status: 'error',
         originalUrl,
         source,
-        message: getErrorMessage(error),
+        message:
+          getErrorMessage(error),
       }
     }
+  }
+
+  if (
+    pendingResult.status ===
+    'success'
+  ) {
+    await saveLastResult(
+      {
+        originalUrl:
+          pendingResult.originalUrl,
+
+        source:
+          pendingResult.source,
+
+        shortLink:
+          pendingResult.shortLink,
+      },
+      chromeApi,
+    )
   }
 
   await saveResult(
@@ -301,34 +338,40 @@ export function registerServiceWorker(
   chromeApi = globalThis.chrome,
 ) {
   if (
-    typeof chromeApi?.runtime?.onInstalled
+    typeof chromeApi?.runtime
+      ?.onInstalled
       ?.addListener !== 'function' ||
-    typeof chromeApi?.contextMenus?.onClicked
+    typeof chromeApi?.contextMenus
+      ?.onClicked
       ?.addListener !== 'function'
   ) {
     return false
   }
 
-  chromeApi.runtime.onInstalled.addListener(
-    (details) => {
-      void handleInstalled(
-        details,
-        chromeApi,
-      )
-    },
-  )
-
-  chromeApi.contextMenus.onClicked.addListener(
-    (info, tab) => {
-      void handleContextMenuClick(
-        info,
-        tab,
-        {
+  chromeApi.runtime
+    .onInstalled
+    .addListener(
+      (details) => {
+        void handleInstalled(
+          details,
           chromeApi,
-        },
-      )
-    },
-  )
+        )
+      },
+    )
+
+  chromeApi.contextMenus
+    .onClicked
+    .addListener(
+      (info, tab) => {
+        void handleContextMenuClick(
+          info,
+          tab,
+          {
+            chromeApi,
+          },
+        )
+      },
+    )
 
   return true
 }
