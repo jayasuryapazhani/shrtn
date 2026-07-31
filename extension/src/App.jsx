@@ -1,23 +1,41 @@
-import { useEffect, useMemo, useState } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
+
 import './App.css'
+
 import {
   createShortLink,
   getLinkAnalytics,
 } from './services/linkApi'
-import { createQrCodeDataUrl } from './services/qrCodeService'
-import { getActiveTabUrl } from './services/tabService'
-import { isSupportedWebUrl } from './utils/url'
+
+import {
+  createQrCodeDataUrl,
+} from './services/qrCodeService'
+
+import {
+  getActiveTabUrl,
+} from './services/tabService'
+
+import {
+  isSupportedWebUrl,
+} from './utils/url'
+
 import {
   takePendingContextActionResult,
 } from './services/contextActionStorage'
 
-const dateTimeFormatter = new Intl.DateTimeFormat(
-  undefined,
-  {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  },
-)
+const dateTimeFormatter =
+  new Intl.DateTimeFormat(
+    undefined,
+    {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    },
+  )
 
 function formatDateTime(value) {
   if (!value) {
@@ -55,32 +73,59 @@ async function clearActionSignal(
       })
     }
   } catch {
-    // A badge failure should not break the popup.
+    // Badge cleanup must not break the popup.
   }
 }
 
 function App() {
   const [url, setUrl] = useState('')
-  const [shortLink, setShortLink] = useState(null)
-  const [analytics, setAnalytics] = useState(null)
-  const [analyticsError, setAnalyticsError] =
-    useState('')
-  const [qrCodeDataUrl, setQrCodeDataUrl] =
-    useState('')
+
+  const [shortLink, setShortLink] =
+    useState(null)
+
+  const [analytics, setAnalytics] =
+    useState(null)
+
+  const [
+    analyticsError,
+    setAnalyticsError,
+  ] = useState('')
+
+  const [
+    qrCodeDataUrl,
+    setQrCodeDataUrl,
+  ] = useState('')
+
+  const [
+    shouldFocusQr,
+    setShouldFocusQr,
+  ] = useState(false)
+
   const [isReadingTab, setIsReadingTab] =
     useState(true)
+
   const [isSubmitting, setIsSubmitting] =
     useState(false)
+
   const [
     isLoadingAnalytics,
     setIsLoadingAnalytics,
   ] = useState(false)
+
   const [copyLabel, setCopyLabel] =
     useState('Copy')
+
   const [statusType, setStatusType] =
     useState('loading')
-  const [statusMessage, setStatusMessage] =
-    useState('Reading current tab...')
+
+  const [
+    statusMessage,
+    setStatusMessage,
+  ] = useState(
+    'Reading current tab...',
+  )
+
+  const qrSectionRef = useRef(null)
 
   const isValidUrl = useMemo(
     () => isSupportedWebUrl(url),
@@ -111,10 +156,16 @@ function App() {
               'success' &&
             pendingResult.shortLink?.shortUrl
           ) {
+            const showQr =
+              pendingResult.showQr === true
+
+            setShouldFocusQr(showQr)
             setStatusType('loading')
 
             setStatusMessage(
-              'Loading your right-click result...',
+              showQr
+                ? 'Preparing your QR code...'
+                : 'Loading your right-click result...',
             )
 
             setShortLink(
@@ -125,7 +176,7 @@ function App() {
 
             setStatusMessage(
               pendingResult.message ??
-                'The page could not be shortened.',
+                'The URL could not be shortened.',
             )
           }
 
@@ -181,102 +232,125 @@ function App() {
   }, [])
 
   useEffect(() => {
-  if (
-    !shortLink?.shortUrl ||
-    !shortLink?.shortCode
-  ) {
-    return undefined
-  }
+    if (
+      !shortLink?.shortUrl ||
+      !shortLink?.shortCode
+    ) {
+      return undefined
+    }
 
-  let cancelled = false
+    let cancelled = false
 
-  async function loadGeneratedContent() {
-    setQrCodeDataUrl('')
-    setAnalytics(null)
-    setAnalyticsError('')
+    async function loadGeneratedContent() {
+      setQrCodeDataUrl('')
+      setAnalytics(null)
+      setAnalyticsError('')
 
-    const [
-      qrResult,
-      analyticsResult,
-    ] = await Promise.allSettled([
-      createQrCodeDataUrl(
-        shortLink.shortUrl,
-      ),
+      const [
+        qrResult,
+        analyticsResult,
+      ] = await Promise.allSettled([
+        createQrCodeDataUrl(
+          shortLink.shortUrl,
+        ),
 
-      getLinkAnalytics(
-        shortLink.shortCode,
-      ),
-    ])
+        getLinkAnalytics(
+          shortLink.shortCode,
+        ),
+      ])
 
-    if (cancelled) {
+      if (cancelled) {
+        return
+      }
+
+      if (
+        qrResult.status === 'fulfilled'
+      ) {
+        setQrCodeDataUrl(
+          qrResult.value,
+        )
+      }
+
+      if (
+        analyticsResult.status ===
+        'fulfilled'
+      ) {
+        setAnalytics(
+          analyticsResult.value,
+        )
+      } else {
+        setAnalyticsError(
+          analyticsResult.reason instanceof
+            Error
+            ? analyticsResult.reason
+                .message
+            : 'Analytics could not be loaded.',
+        )
+      }
+
+      const qrSucceeded =
+        qrResult.status === 'fulfilled'
+
+      const analyticsSucceeded =
+        analyticsResult.status ===
+        'fulfilled'
+
+      if (
+        qrSucceeded &&
+        analyticsSucceeded
+      ) {
+        setStatusType('success')
+
+        setStatusMessage(
+          'Short link, QR code, and analytics created successfully.',
+        )
+      } else if (!qrSucceeded) {
+        setStatusType('error')
+
+        setStatusMessage(
+          'Short link created, but the QR code could not be generated.',
+        )
+      } else {
+        setStatusType('success')
+
+        setStatusMessage(
+          'Short link and QR code created. Analytics could not be loaded.',
+        )
+      }
+    }
+
+    void loadGeneratedContent()
+
+    return () => {
+      cancelled = true
+    }
+  }, [shortLink])
+
+  useEffect(() => {
+    if (
+      !shouldFocusQr ||
+      !qrCodeDataUrl
+    ) {
       return
     }
 
-    if (
-      qrResult.status === 'fulfilled'
-    ) {
-      setQrCodeDataUrl(qrResult.value)
-    }
+    qrSectionRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
 
-    if (
-      analyticsResult.status ===
-      'fulfilled'
-    ) {
-      setAnalytics(
-        analyticsResult.value,
-      )
-    } else {
-      setAnalyticsError(
-        analyticsResult.reason instanceof
-          Error
-          ? analyticsResult.reason.message
-          : 'Analytics could not be loaded.',
-      )
-    }
-
-    const qrSucceeded =
-      qrResult.status === 'fulfilled'
-
-    const analyticsSucceeded =
-      analyticsResult.status ===
-      'fulfilled'
-
-    if (
-      qrSucceeded &&
-      analyticsSucceeded
-    ) {
-      setStatusType('success')
-
-      setStatusMessage(
-        'Short link, QR code, and analytics created successfully.',
-      )
-    } else if (!qrSucceeded) {
-      setStatusType('error')
-
-      setStatusMessage(
-        'Short link created, but the QR code could not be generated.',
-      )
-    } else {
-      setStatusType('success')
-
-      setStatusMessage(
-        'Short link and QR code created. Analytics could not be loaded.',
-      )
-    }
-  }
-
-  void loadGeneratedContent()
-
-  return () => {
-    cancelled = true
-  }
-}, [shortLink])
+    setShouldFocusQr(false)
+  }, [
+    qrCodeDataUrl,
+    shouldFocusQr,
+  ])
 
   function resetGeneratedContent() {
     setShortLink(null)
     setAnalytics(null)
     setAnalyticsError('')
     setQrCodeDataUrl('')
+    setShouldFocusQr(false)
     setCopyLabel('Copy')
   }
 
@@ -288,21 +362,26 @@ function App() {
 
     if (!nextUrl.trim()) {
       setStatusType('error')
+
       setStatusMessage(
         'Enter an HTTP or HTTPS URL.',
       )
+
       return
     }
 
     if (isSupportedWebUrl(nextUrl)) {
       setStatusType('success')
+
       setStatusMessage(
         'URL is ready to shorten.',
       )
+
       return
     }
 
     setStatusType('error')
+
     setStatusMessage(
       'Only HTTP and HTTPS URLs are supported.',
     )
@@ -311,13 +390,17 @@ function App() {
   async function handleSubmit(event) {
     event.preventDefault()
 
-    if (!isValidUrl || isSubmitting) {
+    if (
+      !isValidUrl ||
+      isSubmitting
+    ) {
       return
     }
 
     setIsSubmitting(true)
     resetGeneratedContent()
     setStatusType('loading')
+
     setStatusMessage(
       'Creating your short link...',
     )
@@ -359,6 +442,7 @@ function App() {
     setIsLoadingAnalytics(true)
     setAnalyticsError('')
     setStatusType('loading')
+
     setStatusMessage(
       'Refreshing link analytics...',
     )
@@ -369,8 +453,12 @@ function App() {
           shortLink.shortCode,
         )
 
-      setAnalytics(refreshedAnalytics)
+      setAnalytics(
+        refreshedAnalytics,
+      )
+
       setStatusType('success')
+
       setStatusMessage(
         'Analytics refreshed successfully.',
       )
@@ -400,12 +488,14 @@ function App() {
 
       setCopyLabel('Copied')
       setStatusType('success')
+
       setStatusMessage(
         'Short link copied to the clipboard.',
       )
     } catch {
       setCopyLabel('Copy failed')
       setStatusType('error')
+
       setStatusMessage(
         'The short link could not be copied.',
       )
@@ -424,7 +514,10 @@ function App() {
 
           <div>
             <h1>Shrtn</h1>
-            <p>Shorten. Track. Share.</p>
+
+            <p>
+              Shorten. Track. Share.
+            </p>
           </div>
         </div>
 
@@ -435,7 +528,10 @@ function App() {
           rel="noreferrer"
         >
           Website
-          <span aria-hidden="true">↗</span>
+
+          <span aria-hidden="true">
+            ↗
+          </span>
         </a>
       </header>
 
@@ -481,10 +577,12 @@ function App() {
               value={url}
               placeholder="https://example.com"
               aria-invalid={
-                url.length > 0 && !isValidUrl
+                url.length > 0 &&
+                !isValidUrl
               }
               disabled={
-                isReadingTab || isSubmitting
+                isReadingTab ||
+                isSubmitting
               }
               onChange={handleUrlChange}
             />
@@ -513,7 +611,9 @@ function App() {
         </form>
 
         <p
-          className={`helper helper--${statusType}`}
+          className={
+            `helper helper--${statusType}`
+          }
           role={
             statusType === 'error'
               ? 'alert'
@@ -534,7 +634,9 @@ function App() {
             aria-label="Creating short link"
           >
             <span className="skeleton skeleton--short" />
+
             <span className="skeleton skeleton--long" />
+
             <span className="skeleton skeleton--medium" />
           </section>
         )}
@@ -589,7 +691,9 @@ function App() {
             <section
               className="analytics"
               aria-labelledby="analytics-heading"
-              aria-busy={isLoadingAnalytics}
+              aria-busy={
+                isLoadingAnalytics
+              }
             >
               <div className="analytics__header">
                 <h3 id="analytics-heading">
@@ -599,7 +703,9 @@ function App() {
                 <button
                   className="button button--secondary"
                   type="button"
-                  disabled={isLoadingAnalytics}
+                  disabled={
+                    isLoadingAnalytics
+                  }
                   onClick={
                     handleRefreshAnalytics
                   }
@@ -613,14 +719,22 @@ function App() {
               {analytics ? (
                 <dl className="analytics__grid">
                   <div className="analytics__metric analytics__metric--primary">
-                    <dt>Clicks</dt>
+                    <dt>
+                      Clicks
+                    </dt>
+
                     <dd>
-                      {analytics.clickCount}
+                      {
+                        analytics.clickCount
+                      }
                     </dd>
                   </div>
 
                   <div className="analytics__metric">
-                    <dt>Created</dt>
+                    <dt>
+                      Created
+                    </dt>
+
                     <dd>
                       {formatDateTime(
                         analytics.createdAt,
@@ -629,10 +743,14 @@ function App() {
                   </div>
 
                   <div className="analytics__metric">
-                    <dt>Last clicked</dt>
+                    <dt>
+                      Last clicked
+                    </dt>
+
                     <dd>
                       {formatDateTime(
-                        analytics.lastClickedAt,
+                        analytics
+                          .lastClickedAt,
                       )}
                     </dd>
                   </div>
@@ -649,18 +767,20 @@ function App() {
                 </p>
               )}
 
-              {analytics && analyticsError && (
-                <p
-                  className="analytics__message analytics__message--error"
-                  role="alert"
-                >
-                  {analyticsError}
-                </p>
-              )}
+              {analytics &&
+                analyticsError && (
+                  <p
+                    className="analytics__message analytics__message--error"
+                    role="alert"
+                  >
+                    {analyticsError}
+                  </p>
+                )}
             </section>
 
             {qrCodeDataUrl && (
               <section
+                ref={qrSectionRef}
                 className="qr"
                 aria-labelledby="qr-heading"
               >
@@ -678,7 +798,9 @@ function App() {
                   <a
                     className="button button--download"
                     href={qrCodeDataUrl}
-                    download={`shrtn-${shortLink.shortCode}.png`}
+                    download={
+                      `shrtn-${shortLink.shortCode}.png`
+                    }
                   >
                     Download
                   </a>
@@ -687,7 +809,9 @@ function App() {
                 <div className="qr__image-wrap">
                   <img
                     src={qrCodeDataUrl}
-                    alt={`QR code for ${shortLink.shortUrl}`}
+                    alt={
+                      `QR code for ${shortLink.shortUrl}`
+                    }
                   />
                 </div>
               </section>
@@ -706,7 +830,9 @@ function App() {
           Live API
         </span>
 
-        <span aria-hidden="true">·</span>
+        <span aria-hidden="true">
+          ·
+        </span>
 
         <span>
           QR and analytics enabled
