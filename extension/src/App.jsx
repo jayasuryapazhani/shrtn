@@ -36,6 +36,8 @@ import {
   takePendingContextActionResult,
 } from './services/contextActionStorage'
 
+const COPY_LABEL_RESET_DELAY_MS = 2000
+
 const dateTimeFormatter =
   new Intl.DateTimeFormat(
     undefined,
@@ -172,6 +174,9 @@ function App() {
     useRef(null)
 
   const qrSectionRef =
+    useRef(null)
+
+  const copyLabelTimerRef =
     useRef(null)
 
 
@@ -354,6 +359,19 @@ function App() {
   }, [])
 
   useEffect(() => {
+  return () => {
+    if (
+      copyLabelTimerRef.current !==
+      null
+    ) {
+      globalThis.clearTimeout(
+        copyLabelTimerRef.current,
+      )
+    }
+  }
+}, [])
+
+  useEffect(() => {
     if (
       !shortLink?.shortUrl ||
       !shortLink?.shortCode
@@ -470,13 +488,48 @@ function App() {
     shouldFocusQr,
   ])
 
+  function clearCopyLabelTimer() {
+  if (
+    copyLabelTimerRef.current ===
+    null
+  ) {
+    return
+  }
+
+  globalThis.clearTimeout(
+    copyLabelTimerRef.current,
+  )
+
+  copyLabelTimerRef.current = null
+}
+
+function resetCopyFeedback() {
+  clearCopyLabelTimer()
+  setCopyLabel('Copy')
+}
+
+function scheduleCopyLabelReset() {
+  clearCopyLabelTimer()
+
+  copyLabelTimerRef.current =
+    globalThis.setTimeout(
+      () => {
+        setCopyLabel('Copy')
+
+        copyLabelTimerRef.current =
+          null
+      },
+      COPY_LABEL_RESET_DELAY_MS,
+    )
+}
+
   function resetGeneratedContent() {
     setShortLink(null)
     setAnalytics(null)
     setAnalyticsError('')
     setQrCodeDataUrl('')
     setShouldFocusQr(false)
-    setCopyLabel('Copy')
+    resetCopyFeedback()
   }
 
   function handleUrlChange(event) {
@@ -651,32 +704,36 @@ function App() {
     }
   }
 
-  async function handleCopy() {
-    if (!shortLink?.shortUrl) {
-      return
-    }
-
-    try {
-      await navigator.clipboard
-        .writeText(
-          shortLink.shortUrl,
-        )
-
-      setCopyLabel('Copied')
-      setStatusType('success')
-
-      setStatusMessage(
-        'Short link copied to the clipboard.',
-      )
-    } catch {
-      setCopyLabel('Copy failed')
-      setStatusType('error')
-
-      setStatusMessage(
-        'The short link could not be copied.',
-      )
-    }
+async function handleCopy() {
+  if (!shortLink?.shortUrl) {
+    return
   }
+
+  clearCopyLabelTimer()
+
+  try {
+    await navigator.clipboard
+      .writeText(
+        shortLink.shortUrl,
+      )
+
+    setCopyLabel('Copied')
+    setStatusType('success')
+
+    setStatusMessage(
+      'Short link copied to the clipboard.',
+    )
+  } catch {
+    setCopyLabel('Copy failed')
+    setStatusType('error')
+
+    setStatusMessage(
+      'The short link could not be copied.',
+    )
+  } finally {
+    scheduleCopyLabelReset()
+  }
+}
 
   function handleShortenAnother() {
   resetGeneratedContent()
@@ -718,7 +775,7 @@ function App() {
     setAnalyticsError('')
     setQrCodeDataUrl('')
     setShouldFocusQr(false)
-    setCopyLabel('Copy')
+    resetCopyFeedback()
     setStatusType('loading')
 
     setStatusMessage(
@@ -1000,6 +1057,7 @@ function App() {
               <button
                 className="button button--copy"
                 type="button"
+                aria-live="polite"
                 onClick={handleCopy}
               >
                 {copyLabel}
