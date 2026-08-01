@@ -77,6 +77,21 @@ export function createApp({
     },
   )
 
+
+    app.get(
+    '/privacy',
+    (request, response) => {
+      void request
+
+      return response.sendFile(
+        'privacy.html',
+        {
+          root: PUBLIC_DIRECTORY,
+        },
+          )
+        },
+      )
+
   app.use(
     '/api/v1',
     rateLimiters.api,

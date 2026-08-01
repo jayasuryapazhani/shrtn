@@ -1,102 +1,1041 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1"
-  >
-  <title>Shrtn Privacy Policy</title>
-</head>
-<body>
-  <main>
-    <h1>Shrtn Privacy Policy</h1>
+  <head>
+    <meta charset="UTF-8" />
 
-    <p>Last updated: July 15, 2026</p>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
 
-    <h2>Overview</h2>
+    <meta
+      name="description"
+      content="Shrtn privacy policy describing how the browser extension and URL-shortening service handle URLs, local history, analytics, and technical data."
+    />
 
-    <p>
-      Shrtn is a browser extension and URL-shortening service.
-      It creates short links, generates QR codes, and displays
-      redirect analytics.
-    </p>
+    <meta
+      name="theme-color"
+      content="#f5e7cf"
+    />
 
-    <h2>Information processed</h2>
+    <meta
+      name="robots"
+      content="index, follow"
+    />
 
-    <p>
-      When a user opens the Shrtn extension, it may read the URL
-      of the active browser tab to prefill the URL field.
-    </p>
+    <title>
+      Privacy Policy | Shrtn
+    </title>
 
-    <p>
-      When the user chooses to shorten a URL, that URL is sent
-      securely to the Shrtn API.
-    </p>
+    <link
+      rel="icon"
+      type="image/png"
+      href="./assets/link-logo.png"
+    />
 
-    <p>
-      The Shrtn service stores the original URL, generated short
-      code, creation timestamp, redirect click count, and most
-      recent click timestamp.
-    </p>
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
 
-    <h2>How information is used</h2>
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
 
-    <p>
-      This information is used only to create and operate short
-      links, generate QR codes, perform redirects, and provide
-      link analytics.
-    </p>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Lora:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
-    <h2>Information not collected</h2>
+    <link
+      rel="stylesheet"
+      href="./styles.css"
+    />
+  </head>
 
-    <p>
-      Shrtn does not require an account and does not intentionally
-      collect names, email addresses, payment information,
-      passwords, personal communications, or page content.
-    </p>
+  <body class="privacy-page">
+    <div class="page-shell">
+      <header class="site-header">
+        <div class="container header-inner">
+          <a
+            class="brand"
+            href="./"
+            aria-label="Shrtn homepage"
+          >
+            <img
+              class="brand-logo"
+              src="./assets/link-logo.png"
+              alt=""
+            />
 
-    <h2>Sharing and selling</h2>
+            <span class="brand-copy">
+              <strong>Shrtn</strong>
 
-    <p>
-      Shrtn does not sell user data. Data is not used for
-      advertising, credit decisions, or unrelated purposes.
-    </p>
+              <span class="brand-version">
+                v1.1.0
+              </span>
+            </span>
+          </a>
 
-    <p>
-      Infrastructure providers may process information only as
-      required to host the Shrtn API and PostgreSQL database.
-    </p>
+          <nav
+            class="site-nav privacy-site-nav"
+            aria-label="Privacy page navigation"
+          >
+            <a href="#information">
+              Information
+            </a>
 
-    <h2>Security</h2>
+            <a href="#storage">
+              Storage
+            </a>
 
-    <p>
-      Data is transmitted using HTTPS. Shrtn applies request
-      validation, security headers, request-size limits, and rate
-      limiting.
-    </p>
+            <a href="#permissions">
+              Permissions
+            </a>
 
-    <h2>Data retention</h2>
+            <a href="#choices">
+              Your choices
+            </a>
 
-    <p>
-      Short-link records are retained so that generated links
-      continue to redirect and provide analytics.
-    </p>
+            <a href="#contact">
+              Contact
+            </a>
+          </nav>
 
-    <h2>User choices</h2>
+          <div class="header-actions">
+            <a
+              class="button button-secondary"
+              href="./"
+            >
+              Back to Shrtn
+            </a>
 
-    <p>
-      Shrtn reads the active tab URL only when the user invokes
-      the extension. Users can also replace the detected URL
-      before creating a short link.
-    </p>
+            <a
+              class="button button-primary"
+              href="https://chromewebstore.google.com/detail/shrtn/adodmibgcbmnhdagfkipjpjfkeaalfim"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Add to Chrome
 
-    <h2>Contact</h2>
+              <span aria-hidden="true">
+                &#8599;
+              </span>
+            </a>
+          </div>
+        </div>
+      </header>
 
-    <p>
-      Privacy questions can be submitted through the Shrtn GitHub
-      repository.
-    </p>
-  </main>
-</body>
+      <main>
+        <section class="privacy-hero">
+          <div class="container privacy-hero-layout">
+            <div class="privacy-hero-copy">
+              <div class="release-pill">
+                <span
+                  class="release-pill-dot"
+                  aria-hidden="true"
+                ></span>
+
+                <span>
+                  Shrtn Privacy Policy
+                </span>
+              </div>
+
+              <p class="eyebrow">
+                Clear data practices
+              </p>
+
+              <h1>
+                Privacy at Shrtn
+              </h1>
+
+              <span
+                class="sketch-underline"
+                aria-hidden="true"
+              ></span>
+
+              <p class="privacy-hero-description">
+                This policy explains what information the Shrtn
+                browser extension and URL-shortening service
+                process, why that information is needed, where
+                it is stored, and the choices available to you.
+              </p>
+
+              <div class="privacy-policy-meta">
+                <span>
+                  Effective: August 1, 2026
+                </span>
+
+                <span aria-hidden="true">
+                  &middot;
+                </span>
+
+                <span>
+                  Last updated: August 1, 2026
+                </span>
+              </div>
+            </div>
+
+            <aside
+              class="privacy-summary sketch-panel"
+              aria-label="Privacy summary"
+            >
+              <p class="eyebrow">
+                At a glance
+              </p>
+
+              <h2>
+                Built without accounts or advertising.
+              </h2>
+
+              <ul>
+                <li>
+                  <span aria-hidden="true">
+                    &#10003;
+                  </span>
+
+                  No account or sign-in required
+                </li>
+
+                <li>
+                  <span aria-hidden="true">
+                    &#10003;
+                  </span>
+
+                  Recent extension history stays in local
+                  browser storage
+                </li>
+
+                <li>
+                  <span aria-hidden="true">
+                    &#10003;
+                  </span>
+
+                  No sale of user data
+                </li>
+
+                <li>
+                  <span aria-hidden="true">
+                    &#10003;
+                  </span>
+
+                  No personalized advertising
+                </li>
+
+                <li>
+                  <span aria-hidden="true">
+                    &#10003;
+                  </span>
+
+                  No third-party behavioral analytics
+                </li>
+              </ul>
+            </aside>
+          </div>
+        </section>
+
+        <section class="privacy-content-section">
+          <div class="container privacy-content-layout">
+            <aside class="privacy-table-of-contents">
+              <div class="privacy-toc-card sketch-panel">
+                <strong>
+                  On this page
+                </strong>
+
+                <nav aria-label="Privacy policy sections">
+                  <a href="#overview">
+                    1. Overview
+                  </a>
+
+                  <a href="#information">
+                    2. Information handled
+                  </a>
+
+                  <a href="#use">
+                    3. How information is used
+                  </a>
+
+                  <a href="#storage">
+                    4. Storage and retention
+                  </a>
+
+                  <a href="#sharing">
+                    5. Sharing and providers
+                  </a>
+
+                  <a href="#permissions">
+                    6. Extension permissions
+                  </a>
+
+                  <a href="#choices">
+                    7. Your choices
+                  </a>
+
+                  <a href="#security">
+                    8. Security
+                  </a>
+
+                  <a href="#limited-use">
+                    9. Limited Use
+                  </a>
+
+                  <a href="#changes">
+                    10. Policy changes
+                  </a>
+
+                  <a href="#contact">
+                    11. Contact
+                  </a>
+                </nav>
+              </div>
+            </aside>
+
+            <article class="privacy-document sketch-panel">
+              <section id="overview">
+                <p class="privacy-section-number">
+                  01
+                </p>
+
+                <h2>
+                  Overview
+                </h2>
+
+                <p>
+                  Shrtn is a URL-shortening service and browser
+                  extension. Its primary purpose is to convert
+                  a user-selected HTTP or HTTPS URL into a
+                  shorter public URL, provide redirect
+                  analytics, generate a QR code, and make
+                  recent results available inside the browser.
+                </p>
+
+                <p>
+                  Shrtn does not require an account. It does
+                  not collect names, email addresses, payment
+                  information, contact lists, passwords, or
+                  advertising identifiers as part of its
+                  normal shortening workflow.
+                </p>
+
+                <div class="privacy-notice">
+                  <strong>
+                    Important
+                  </strong>
+
+                  <p>
+                    URLs can contain private information,
+                    authentication tokens, document identifiers,
+                    or personal data. Do not submit confidential,
+                    private, expiring, or access-controlled URLs
+                    to Shrtn.
+                  </p>
+                </div>
+              </section>
+
+              <section id="information">
+                <p class="privacy-section-number">
+                  02
+                </p>
+
+                <h2>
+                  Information Shrtn handles
+                </h2>
+
+                <h3>
+                  URLs you choose to shorten
+                </h3>
+
+                <p>
+                  When you use the extension or website, Shrtn
+                  processes the original URL you submit. The
+                  URL is sent to the Shrtn backend so that a
+                  public short link can be created.
+                </p>
+
+                <p>
+                  The backend stores the information required
+                  to operate the link:
+                </p>
+
+                <ul>
+                  <li>
+                    Original destination URL
+                  </li>
+
+                  <li>
+                    Generated short code and public short URL
+                  </li>
+
+                  <li>
+                    Link creation timestamp
+                  </li>
+
+                  <li>
+                    Successful redirect count
+                  </li>
+
+                  <li>
+                    Most recent successful redirect timestamp
+                  </li>
+                </ul>
+
+                <h3>
+                  Local browser history
+                </h3>
+
+                <p>
+                  The extension stores up to 20 recent generated
+                  results in the browser&rsquo;s local extension
+                  storage. This may include:
+                </p>
+
+                <ul>
+                  <li>
+                    Original URL
+                  </li>
+
+                  <li>
+                    Generated short URL and short code
+                  </li>
+
+                  <li>
+                    Creation and analytics information
+                  </li>
+
+                  <li>
+                    Whether the result originated from the
+                    popup, page menu, or link menu
+                  </li>
+
+                  <li>
+                    The time the result was saved locally
+                  </li>
+                </ul>
+
+                <p>
+                  This recent-result list is not synchronized
+                  through a Shrtn account and is not uploaded
+                  as a separate browsing-history dataset.
+                </p>
+
+                <h3>
+                  Technical request information
+                </h3>
+
+                <p>
+                  When a browser communicates with the Shrtn
+                  service, infrastructure providers may process
+                  technical request information needed to
+                  deliver, secure, and maintain the service.
+                  This can include IP address, request time,
+                  browser or user-agent information, and
+                  diagnostic information.
+                </p>
+
+                <p>
+                  Shrtn does not use this technical information
+                  to build advertising profiles or track users
+                  across unrelated websites.
+                </p>
+              </section>
+
+              <section id="use">
+                <p class="privacy-section-number">
+                  03
+                </p>
+
+                <h2>
+                  How information is used
+                </h2>
+
+                <p>
+                  Information is used only to provide and
+                  maintain Shrtn&rsquo;s user-facing features,
+                  including:
+                </p>
+
+                <ul>
+                  <li>
+                    Creating and returning public short links
+                  </li>
+
+                  <li>
+                    Redirecting short links to their original
+                    destinations
+                  </li>
+
+                  <li>
+                    Generating QR codes inside the extension
+                  </li>
+
+                  <li>
+                    Displaying click counts and timestamps
+                  </li>
+
+                  <li>
+                    Restoring recent extension results
+                  </li>
+
+                  <li>
+                    Detecting duplicate URLs in local history
+                  </li>
+
+                  <li>
+                    Diagnosing failures, preventing abuse, and
+                    maintaining service security
+                  </li>
+                </ul>
+
+                <p>
+                  Shrtn does not use submitted URLs or extension
+                  history for personalized advertising,
+                  credit decisions, data brokerage, or marketing
+                  profiles.
+                </p>
+              </section>
+
+              <section id="storage">
+                <p class="privacy-section-number">
+                  04
+                </p>
+
+                <h2>
+                  Storage and retention
+                </h2>
+
+                <h3>
+                  Browser-local storage
+                </h3>
+
+                <p>
+                  Recent extension results are stored using the
+                  browser&rsquo;s local extension-storage
+                  mechanism. They remain until one of the
+                  following occurs:
+                </p>
+
+                <ul>
+                  <li>
+                    You select the extension&rsquo;s
+                    <strong>Clear</strong> action
+                  </li>
+
+                  <li>
+                    The browser removes the extension&rsquo;s
+                    stored data
+                  </li>
+
+                  <li>
+                    You uninstall the extension
+                  </li>
+                </ul>
+
+                <p>
+                  The extension limits its recent-result list
+                  to 20 entries.
+                </p>
+
+                <h3>
+                  Backend storage
+                </h3>
+
+                <p>
+                  Link records are stored in the Shrtn
+                  PostgreSQL database so that public short URLs
+                  continue to redirect and analytics remain
+                  available.
+                </p>
+
+                <p>
+                  Because Shrtn does not use accounts, link
+                  records are not associated with a user
+                  profile. Public short-link records may remain
+                  stored while the Shrtn service continues to
+                  operate unless removal is required for
+                  security, legal, or operational reasons.
+                </p>
+              </section>
+
+              <section id="sharing">
+                <p class="privacy-section-number">
+                  05
+                </p>
+
+                <h2>
+                  Sharing and service providers
+                </h2>
+
+                <p>
+                  Shrtn does not sell or rent submitted URLs,
+                  local extension history, or analytics data.
+                </p>
+
+                <p>
+                  Information may be processed by infrastructure
+                  providers only as necessary to operate the
+                  service:
+                </p>
+
+                <div class="privacy-provider-grid">
+                  <article>
+                    <strong>
+                      Railway
+                    </strong>
+
+                    <p>
+                      Hosts the Shrtn website and backend API
+                      and processes network requests sent to
+                      the service.
+                    </p>
+                  </article>
+
+                  <article>
+                    <strong>
+                      Neon
+                    </strong>
+
+                    <p>
+                      Hosts the PostgreSQL database containing
+                      short-link and redirect-analytics records.
+                    </p>
+                  </article>
+
+                  <article>
+                    <strong>
+                      Chrome Web Store
+                    </strong>
+
+                    <p>
+                      Distributes the extension. Google and the
+                      browser may independently process store,
+                      installation, and browser information
+                      under their own policies.
+                    </p>
+                  </article>
+                </div>
+
+                <p>
+                  Information may also be disclosed when
+                  reasonably necessary to comply with applicable
+                  law, respond to valid legal process, protect
+                  users, investigate abuse, or secure the
+                  service.
+                </p>
+              </section>
+
+              <section id="permissions">
+                <p class="privacy-section-number">
+                  06
+                </p>
+
+                <h2>
+                  Extension permissions
+                </h2>
+
+                <p>
+                  Shrtn requests a limited set of browser
+                  permissions directly related to its
+                  shortening workflow.
+                </p>
+
+                <div class="privacy-permission-list">
+                  <article>
+                    <code>
+                      activeTab
+                    </code>
+
+                    <div>
+                      <strong>
+                        Read the current page URL
+                      </strong>
+
+                      <p>
+                        Used when you open Shrtn and choose to
+                        shorten the active HTTP or HTTPS page.
+                      </p>
+                    </div>
+                  </article>
+
+                  <article>
+                    <code>
+                      clipboardWrite
+                    </code>
+
+                    <div>
+                      <strong>
+                        Copy a generated short URL
+                      </strong>
+
+                      <p>
+                        Used only when you select a copy action
+                        inside the extension.
+                      </p>
+                    </div>
+                  </article>
+
+                  <article>
+                    <code>
+                      contextMenus
+                    </code>
+
+                    <div>
+                      <strong>
+                        Provide right-click actions
+                      </strong>
+
+                      <p>
+                        Used to shorten the current page or a
+                        selected hyperlink and to generate QR
+                        results.
+                      </p>
+                    </div>
+                  </article>
+
+                  <article>
+                    <code>
+                      storage
+                    </code>
+
+                    <div>
+                      <strong>
+                        Save extension state locally
+                      </strong>
+
+                      <p>
+                        Used for recent results, last-result
+                        restoration, and pending context-menu
+                        results.
+                      </p>
+                    </div>
+                  </article>
+
+                  <article>
+                    <code>
+                      shrtn.up.railway.app
+                    </code>
+
+                    <div>
+                      <strong>
+                        Communicate with the Shrtn API
+                      </strong>
+
+                      <p>
+                        Allows the extension to create short
+                        links and retrieve redirect analytics
+                        through the production API.
+                      </p>
+                    </div>
+                  </article>
+                </div>
+              </section>
+
+              <section id="choices">
+                <p class="privacy-section-number">
+                  07
+                </p>
+
+                <h2>
+                  Your choices
+                </h2>
+
+                <h3>
+                  Clear recent history
+                </h3>
+
+                <p>
+                  Use the <strong>Clear</strong> button in the
+                  Recent links section to remove the extension's
+                  recent-result list from local browser storage.
+                </p>
+
+                <h3>
+                  Remove extension data
+                </h3>
+
+                <p>
+                  Uninstalling Shrtn removes the extension and
+                  normally causes the browser to remove its
+                  extension-local storage.
+                </p>
+
+                <h3>
+                  Avoid backend storage
+                </h3>
+
+                <p>
+                  Do not submit a URL through the extension or
+                  website when you do not want a persistent
+                  public short-link record to be created.
+                </p>
+
+                <h3>
+                  Removal requests
+                </h3>
+
+                <p>
+                  Because links are created without accounts,
+                  Shrtn may not be able to verify who created
+                  or owns a particular short link. Removal
+                  requests will be evaluated individually where
+                  ownership, security, legal, or abuse concerns
+                  can be reasonably established.
+                </p>
+              </section>
+
+              <section id="security">
+                <p class="privacy-section-number">
+                  08
+                </p>
+
+                <h2>
+                  Security
+                </h2>
+
+                <p>
+                  Shrtn uses HTTPS for communication between
+                  the extension, website, and production API.
+                  The backend applies request validation,
+                  security headers, rate limiting, request-size
+                  restrictions, and trusted-proxy configuration.
+                </p>
+
+                <p>
+                  No internet service can guarantee absolute
+                  security. Do not shorten URLs containing
+                  passwords, access tokens, private document
+                  keys, financial information, or other
+                  confidential material.
+                </p>
+              </section>
+
+              <section id="limited-use">
+                <p class="privacy-section-number">
+                  09
+                </p>
+
+                <h2>
+                  Chrome Web Store Limited Use
+                </h2>
+
+                <div class="privacy-limited-use">
+                  <p>
+                    Shrtn&rsquo;s use of information received
+                    from Chrome APIs adheres to the Chrome Web
+                    Store User Data Policy, including the
+                    Limited Use requirements.
+                  </p>
+                </div>
+
+                <p>
+                  Information accessed through extension
+                  permissions is used only to provide or improve
+                  Shrtn&rsquo;s disclosed URL-shortening,
+                  QR-code, local-history, and analytics
+                  functionality.
+                </p>
+              </section>
+
+              <section id="changes">
+                <p class="privacy-section-number">
+                  10
+                </p>
+
+                <h2>
+                  Changes to this policy
+                </h2>
+
+                <p>
+                  This policy may be updated when Shrtn adds,
+                  removes, or changes functionality, data
+                  practices, infrastructure, or legal
+                  requirements.
+                </p>
+
+                <p>
+                  The effective and last-updated dates at the
+                  top of this page will be revised when material
+                  changes are published.
+                </p>
+              </section>
+
+              <section id="contact">
+                <p class="privacy-section-number">
+                  11
+                </p>
+
+                <h2>
+                  Contact
+                </h2>
+
+                <p>
+                  Privacy questions, security concerns, removal
+                  requests, and reports of misuse can be
+                  submitted through the Shrtn GitHub support
+                  page.
+                </p>
+
+                <div class="privacy-contact-actions">
+                  <a
+                    class="button button-primary"
+                    href="https://github.com/jayasuryapazhani/shrtn/issues"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open support page
+
+                    <span aria-hidden="true">
+                      &#8599;
+                    </span>
+                  </a>
+
+                  <a
+                    class="button button-secondary"
+                    href="./"
+                  >
+                    Return to Shrtn
+                  </a>
+                </div>
+
+                <p class="privacy-contact-warning">
+                  Do not include private destination URLs,
+                  passwords, authentication tokens, or other
+                  confidential information in a public GitHub
+                  issue.
+                </p>
+              </section>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer privacy-footer">
+        <div class="container footer-main">
+          <div class="footer-product">
+            <a
+              class="brand footer-brand"
+              href="./"
+            >
+              <img
+                class="brand-logo"
+                src="./assets/link-logo.png"
+                alt=""
+              />
+
+              <span class="brand-copy">
+                <strong>Shrtn</strong>
+
+                <span class="brand-version">
+                  v1.1.0
+                </span>
+              </span>
+            </a>
+
+            <p>
+              A full-stack URL shortener and browser extension
+              built by Jayasurya Pazhani.
+            </p>
+          </div>
+
+          <nav
+            class="footer-column"
+            aria-label="Privacy links"
+          >
+            <strong>
+              Privacy
+            </strong>
+
+            <a href="#information">
+              Information handled
+            </a>
+
+            <a href="#storage">
+              Storage and retention
+            </a>
+
+            <a href="#permissions">
+              Permissions
+            </a>
+
+            <a href="#choices">
+              Your choices
+            </a>
+          </nav>
+
+          <nav
+            class="footer-column"
+            aria-label="Product links"
+          >
+            <strong>
+              Product
+            </strong>
+
+            <a href="./">
+              Website
+            </a>
+
+            <a
+              href="https://chromewebstore.google.com/detail/shrtn/adodmibgcbmnhdagfkipjpjfkeaalfim"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Chrome Web Store
+            </a>
+
+            <a
+              href="https://github.com/jayasuryapazhani/shrtn"
+              target="_blank"
+              rel="noreferrer"
+            >
+              GitHub
+            </a>
+
+            <a
+              href="https://github.com/jayasuryapazhani/shrtn/issues"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Support
+            </a>
+          </nav>
+
+          <nav
+            class="footer-column"
+            aria-label="Service links"
+          >
+            <strong>
+              Service
+            </strong>
+
+            <a href="/health">
+              API health
+            </a>
+
+            <a href="/#technology">
+              Architecture
+            </a>
+
+            <a href="/#faq">
+              FAQ
+            </a>
+          </nav>
+        </div>
+
+        <div class="container footer-meta">
+          <span>
+            &copy; 2026 Shrtn
+          </span>
+
+          <span>
+            Privacy Policy
+          </span>
+
+          <span>
+            Last updated August 1, 2026
+          </span>
+        </div>
+      </footer>
+    </div>
+  </body>
 </html>
