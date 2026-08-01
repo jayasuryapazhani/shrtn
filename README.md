@@ -538,7 +538,7 @@ Production build completed
 Total automated tests:
 
 ```text
-92
+93
 ```
 
 GitHub Actions runs the extension and backend checks for pushes and pull requests targeting `main`.
