@@ -1,4 +1,4 @@
-﻿# Shrtn
+# Shrtn
 
 Shrtn is a full-stack URL shortener and Manifest V3 browser extension for creating persistent short links, generating downloadable QR codes, and tracking redirect analytics.
 
@@ -8,15 +8,15 @@ Version 1.1.0 adds browser context-menu actions, local recent-link history, resu
   <a href="https://chromewebstore.google.com/detail/shrtn/adodmibgcbmnhdagfkipjpjfkeaalfim">
     <strong>Install from the Chrome Web Store</strong>
   </a>
-  Â·
+  &middot;
   <a href="https://shrtn.up.railway.app">
     <strong>Open the website</strong>
   </a>
-  Â·
+  &middot;
   <a href="https://shrtn.up.railway.app/privacy">
   <strong>Privacy</strong>
   </a>
-  Â·
+  &middot;
   <a href="https://github.com/jayasuryapazhani/shrtn/issues">
     <strong>Support</strong>
   </a>
@@ -275,36 +275,36 @@ HTTP redirect to original URL
 
 ```text
 shrtn/
-â”œâ”€â”€ .github/
-â”‚   â””â”€â”€ workflows/
-â”‚       â””â”€â”€ ci.yml
-â”œâ”€â”€ docs/
-â”‚   â”œâ”€â”€ screenshots/
-â”‚   â”‚   â””â”€â”€ v1.1.0/
-â”‚   â”œâ”€â”€ database.md
-â”‚   â””â”€â”€ openapi.yaml
-â”œâ”€â”€ extension/
-â”‚   â”œâ”€â”€ public/
-â”‚   â”‚   â”œâ”€â”€ icons/
-â”‚   â”‚   â””â”€â”€ manifest.json
-â”‚   â”œâ”€â”€ src/
-â”‚   â”‚   â”œâ”€â”€ background/
-â”‚   â”‚   â”œâ”€â”€ services/
-â”‚   â”‚   â””â”€â”€ utils/
-â”‚   â”œâ”€â”€ tests/
-â”‚   â””â”€â”€ vite.config.js
-â”œâ”€â”€ postman/
-â”œâ”€â”€ server/
-â”‚   â”œâ”€â”€ migrations/
-â”‚   â”œâ”€â”€ public/
-â”‚   â”‚   â”œâ”€â”€ assets/
-â”‚   â”‚   â”œâ”€â”€ app.js
-â”‚   â”‚   â”œâ”€â”€ index.html
-â”‚   â”‚   â””â”€â”€ styles.css
-â”‚   â”œâ”€â”€ src/
-â”‚   â””â”€â”€ tests/
-â”œâ”€â”€ .env.example
-â””â”€â”€ README.md
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── docs/
+│   ├── screenshots/
+│   │   └── v1.1.0/
+│   ├── database.md
+│   └── openapi.yaml
+├── extension/
+│   ├── public/
+│   │   ├── icons/
+│   │   └── manifest.json
+│   ├── src/
+│   │   ├── background/
+│   │   ├── services/
+│   │   └── utils/
+│   ├── tests/
+│   └── vite.config.js
+├── postman/
+├── server/
+│   ├── migrations/
+│   ├── public/
+│   │   ├── assets/
+│   │   ├── app.js
+│   │   ├── index.html
+│   │   └── styles.css
+│   ├── src/
+│   └── tests/
+├── .env.example
+└── README.md
 ```
 
 ## Prerequisites
